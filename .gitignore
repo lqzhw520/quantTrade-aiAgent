@@ -6,6 +6,8 @@
 *.pyc
 __pycache__/
 
+node_modules/
+
 # 虚拟环境
 venv/
 .venv/

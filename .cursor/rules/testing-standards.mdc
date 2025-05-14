@@ -1,5 +1,77 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
+# 测试标准
+
+## 后端测试规范
+1. **测试运行**
+   - 测试命令：`PYTHONPATH=. pytest`
+   - 测试覆盖率命令：`PYTHONPATH=. pytest --cov=quant_backend`
+
+2. **测试目录结构**
+   - 单元测试放在 `quant_backend/tests/` 目录
+   - 测试文件命名：`test_xxx.py`
+
+3. **测试类型**
+   - 单元测试：测试单个函数或方法
+   - 集成测试：测试多个组件协同工作
+   - API 测试：测试 HTTP 端点
+
+4. **断言规范**
+   - 每个测试应有明确的断言
+   - 测试应覆盖正常情况和异常情况
+
+## 前端测试规范
+1. **组件测试**
+   - 使用 Vue Test Utils 测试组件
+   - 模拟 API 调用和 WebSocket 事件
+
+2. **E2E 测试**
+   - 根据需要使用 Cypress 或 Playwright 进行端到端测试
+
+## 示例测试
+```python
+# 后端测试示例
+def test_historical_data():
+    # 准备
+    fetcher = MarketDataFetcher()
+    
+    # 执行
+    data = fetcher.fetch_stock_data('TSLA', '2023-01-01', '2023-12-31')
+    
+    # 断言
+    assert data is not None
+    assert not data.empty
+    assert 'Close' in data.columns
+```
+
+```typescript
+// 前端组件测试示例
+import { mount } from '@vue/test-utils'
+import ApiTest from '@/components/ApiTest.vue'
+import { apiService } from '@/services/api'
+
+// 模拟 API 服务
+jest.mock('@/services/api')
+
+describe('ApiTest.vue', () => {
+  test('显示历史数据', async () => {
+    // 模拟 API 返回
+    apiService.getHistoricalData.mockResolvedValue({
+      dates: ['2023-01-01'],
+      close_prices: [100],
+      volumes: [1000]
+    })
+    
+    // 挂载组件
+    const wrapper = mount(ApiTest)
+    
+    // 触发点击
+    await wrapper.find('button').trigger('click')
+    
+    // 断言结果显示
+    expect(wrapper.text()).toContain('数据点数量: 1')
+  })
+})
