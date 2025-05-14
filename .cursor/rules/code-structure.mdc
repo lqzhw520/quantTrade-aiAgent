@@ -1,0 +1,34 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 代码结构
+
+## 后端结构 (`quant_backend/`)
+- `app.py` - 应用入口，注册蓝图和初始化
+- `api/` - RESTful API 路由和控制器
+  - `market_data_routes.py` - 市场数据 API
+  - `strategy_routes.py` - 策略回测 API
+- `services/` - 业务逻辑层
+  - `market_data_service.py` - 市场数据服务
+  - `strategy_service.py` - 策略服务
+- `utils/` - 工具类和函数
+  - `technical_indicators.py` - 技术指标计算
+- `tests/` - 单元测试
+
+## 前端结构 (`quant_frontend/`)
+- `src/` - 源代码目录
+  - `config/` - 配置文件
+    - `api.ts` - API 客户端配置 
+    - `websocket.ts` - WebSocket 客户端配置
+  - `services/` - 服务层
+    - `api.ts` - API 服务封装
+  - `components/` - Vue 组件
+  - `App.vue` - 主应用组件
+
+## 重要引用关系
+- `quant_backend/app.py` 引用 API 蓝图
+- API 蓝图引用 Services 服务层
+- Services 引用 Utils 工具函数
+- 前端 `api.ts` 封装了对后端 API 的所有访问

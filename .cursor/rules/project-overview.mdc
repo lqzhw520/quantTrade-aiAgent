@@ -1,0 +1,24 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 项目概览
+
+本项目是一个量化交易系统，包含前后端分离架构设计。
+
+## 核心项目结构
+- `quant_backend/` - Flask 后端，提供 API 和 WebSocket 服务
+- `quant_frontend/` - Vue 3 前端，使用 TypeScript 和 Tailwind CSS
+
+## 主要功能模块
+- 市场数据获取与处理 (`market_data_service.py`)
+- 技术指标计算 (`technical_indicators.py`)
+- 策略实现与回测 (`strategy_service.py`)
+- 实时通信 (WebSocket)
+
+## 关键文件
+- 后端入口: [quant_backend/app.py](mdc:quant_backend/app.py)
+- 前端入口: [quant_frontend/src/App.vue](mdc:quant_frontend/src/App.vue)
+- API 配置: [quant_frontend/src/config/api.ts](mdc:quant_frontend/src/config/api.ts)
+- WebSocket 配置: [quant_frontend/src/config/websocket.ts](mdc:quant_frontend/src/config/websocket.ts)

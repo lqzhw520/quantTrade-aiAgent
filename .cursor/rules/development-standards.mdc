@@ -1,0 +1,66 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 开发标准
+
+## Python 后端开发规范
+1. **导入路径规范**
+   - **必须使用绝对包路径导入**：`from quant_backend.api.xxx import yyy`
+   - 禁止使用相对导入（如 `from ..api import xxx`）以避免测试和运行时路径问题
+
+2. **包结构规范**
+   - 所有包目录必须包含 `__init__.py` 文件
+   - 包名使用小写下划线命名法（如 `market_data`）
+   - 类名使用大驼峰命名法（如 `MarketDataFetcher`）
+
+3. **项目运行规范**
+   - 所有命令必须在项目根目录执行
+   - 启动后端：`PYTHONPATH=. python3 -m quant_backend.app`
+   - 默认端口为 5001（避免与 macOS AirPlay 冲突）
+
+4. **错误处理规范**
+   - API 错误返回统一格式 JSON：`{"error": "错误信息"}`
+   - 所有异常必须被捕获并记录日志
+
+## TypeScript 前端开发规范
+1. **代码组织**
+   - 使用 TypeScript 类型定义接口
+   - 逻辑代码与 UI 组件分离
+
+2. **API 调用**
+   - 所有 API 调用通过 `services/api.ts` 进行
+   - 统一处理错误和加载状态
+
+3. **命名规范**
+   - 变量和函数使用小驼峰命名法
+   - 接口和类型使用大驼峰命名法
+   - 文件名使用小驼峰命名法
+
+## 示例代码
+```python
+# 错误的导入方式
+from ..api import market_data_routes  # 禁止使用相对导入
+
+# 正确的导入方式
+from quant_backend.api.market_data_routes import market_data_bp
+```
+
+```typescript
+// 正确的 API 调用方式
+import { apiService } from '../services/api';
+
+const getData = async () => {
+  try {
+    const data = await apiService.getHistoricalData({
+      symbol: 'TSLA',
+      start_date: '2023-01-01',
+      end_date: '2023-12-31'
+    });
+    // 处理数据
+  } catch (error) {
+    // 统一错误处理
+  }
+};
+```
