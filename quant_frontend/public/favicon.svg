@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect width="512" height="512" rx="80" fill="#1E293B"/>
+  
+  <!-- 网格背景 -->
+  <path d="M64 128 H448" stroke="#334155" stroke-width="2" stroke-dasharray="8 12"/>
+  <path d="M64 192 H448" stroke="#334155" stroke-width="2" stroke-dasharray="8 12"/>
+  <path d="M64 256 H448" stroke="#334155" stroke-width="2" stroke-dasharray="8 12"/>
+  <path d="M64 320 H448" stroke="#334155" stroke-width="2" stroke-dasharray="8 12"/>
+  <path d="M64 384 H448" stroke="#334155" stroke-width="2" stroke-dasharray="8 12"/>
+  
+  <!-- K线蜡烛图 -->
+  <!-- 蜡烛1 - 上涨 -->
+  <line x1="128" y1="160" x2="128" y2="240" stroke="#38BDF8" stroke-width="2"/>
+  <rect x="118" y="180" width="20" height="40" fill="#38BDF8"/>
+  
+  <!-- 蜡烛2 - 下跌 -->
+  <line x1="176" y1="200" x2="176" y2="300" stroke="#FB7185" stroke-width="2"/>
+  <rect x="166" y="200" width="20" height="60" fill="#FB7185"/>
+  
+  <!-- 蜡烛3 - 上涨 -->
+  <line x1="224" y1="120" x2="224" y2="220" stroke="#38BDF8" stroke-width="2"/>
+  <rect x="214" y="120" width="20" height="70" fill="#38BDF8"/>
+  
+  <!-- 蜡烛4 - 下跌 -->
+  <line x1="272" y1="180" x2="272" y2="280" stroke="#FB7185" stroke-width="2"/>
+  <rect x="262" y="180" width="20" height="80" fill="#FB7185"/>
+  
+  <!-- 蜡烛5 - 上涨 -->
+  <line x1="320" y1="140" x2="320" y2="240" stroke="#38BDF8" stroke-width="2"/>
+  <rect x="310" y="140" width="20" height="60" fill="#38BDF8"/>
+  
+  <!-- 蜡烛6 - 上涨 -->
+  <line x1="368" y1="100" x2="368" y2="200" stroke="#38BDF8" stroke-width="2"/>
+  <rect x="358" y="100" width="20" height="80" fill="#38BDF8"/>
+  
+  <!-- 趋势线 -->
+  <path d="M96 300 Q 160 260 224 240 Q 288 220 384 150" 
+        stroke="#6EE7B7" stroke-width="4" stroke-linecap="round" fill="none"/>
+  
+  <!-- 移动平均线 -->
+  <path d="M96 260 Q 160 280 224 250 Q 288 220 384 180" 
+        stroke="#A78BFA" stroke-width="3" stroke-linecap="round" stroke-dasharray="0" fill="none"/>
+  
+  <!-- 成交量柱状图 -->
+  <rect x="118" y="380" width="20" height="40" fill="#38BDF8" opacity="0.3"/>
+  <rect x="166" y="380" width="20" height="60" fill="#FB7185" opacity="0.3"/>
+  <rect x="214" y="380" width="20" height="70" fill="#38BDF8" opacity="0.3"/>
+  <rect x="262" y="380" width="20" height="50" fill="#FB7185" opacity="0.3"/>
+  <rect x="310" y="380" width="20" height="60" fill="#38BDF8" opacity="0.3"/>
+  <rect x="358" y="380" width="20" height="80" fill="#38BDF8" opacity="0.3"/>
+  
+  <!-- 中心货币符号 -->
+  <g transform="translate(256, 256)" fill="#F8FAFC">
+    <circle cx="0" cy="0" r="44" fill="#0EA5E9" opacity="0.2"/>
+    <path d="M-20 -10 H20 M-20 10 H20 M0 -25 V25" stroke="#F8FAFC" stroke-width="6" stroke-linecap="round"/>
+    <path d="M-8 -18 V-28 M8 -18 V-28" stroke="#F8FAFC" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  
+  <!-- 买卖信号点 -->
+  <circle cx="224" cy="120" r="8" fill="#4ADE80" stroke="#F8FAFC" stroke-width="2"/>
+  <circle cx="368" cy="100" r="8" fill="#4ADE80" stroke="#F8FAFC" stroke-width="2"/>
+  <circle cx="176" cy="260" r="8" fill="#F87171" stroke="#F8FAFC" stroke-width="2"/>
+  <circle cx="272" cy="260" r="8" fill="#F87171" stroke="#F8FAFC" stroke-width="2"/>
+</svg> 

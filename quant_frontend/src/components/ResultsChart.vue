@@ -6,8 +6,16 @@
       v-if="results && results.chart_data" 
       ref="chartContainerRef" 
       class="w-full chart-container"
-      style="min-height: 600px; min-width: 300px; height: 70vh;"
-    ></div>
+      style="min-height: 600px; min-width: 300px; height: 70vh; position: relative;"
+    >
+      <div v-if="chartError" class="absolute inset-0 flex items-center justify-center bg-gray-50 bg-opacity-80 z-10">
+        <p class="text-red-500 text-center p-4">
+          图表渲染出错: {{ chartError }}
+          <br />
+          <button @click="retryRender" class="mt-2 text-blue-500 underline">重试</button>
+        </p>
+      </div>
+    </div>
     
     <div v-else class="flex items-center justify-center chart-container bg-gray-50 rounded-lg">
       <p class="text-gray-500">请先运行回测以查看图表</p>
@@ -53,6 +61,7 @@ const props = defineProps({
 // 图表引用
 const chartContainerRef = ref(null);
 const chartInstance = ref(null);
+const chartError = ref(null);
 
 // 格式化买入信号点
 const formatBuySignals = (signals = []) => {
@@ -93,23 +102,42 @@ const formatSellSignals = (signals = []) => {
   }));
 };
 
+// 重试渲染图表
+const retryRender = () => {
+  chartError.value = null;
+  if (chartInstance.value) {
+    chartInstance.value.dispose();
+    chartInstance.value = null;
+  }
+  initChart();
+};
+
 // 初始化图表
 const initChart = () => {
   try {
     if (chartContainerRef.value && !chartInstance.value) {
       // 确保容器有尺寸
       const container = chartContainerRef.value;
+      
+      // 设置明确的宽高，避免DOM尺寸获取问题
       if (container.clientWidth === 0 || container.clientHeight === 0) {
         container.style.width = '100%';
+        container.style.minWidth = '300px';
         container.style.height = '70vh';
+        container.style.minHeight = '600px';
         console.log('调整图表容器尺寸');
       }
       
       // 再次检查尺寸
       console.log('容器尺寸：', container.clientWidth, 'x', container.clientHeight);
       
-      // 初始化图表
-      chartInstance.value = echarts.init(chartContainerRef.value);
+      // 初始化图表，明确设置宽高
+      chartInstance.value = echarts.init(chartContainerRef.value, null, {
+        width: container.clientWidth || 800,  // 提供默认值
+        height: container.clientHeight || 600, // 提供默认值
+        renderer: 'canvas'
+      });
+      
       console.log('图表初始化成功');
       
       // 更新图表选项
@@ -120,6 +148,7 @@ const initChart = () => {
     }
   } catch (error) {
     console.error('图表初始化错误:', error);
+    chartError.value = error.message || '图表初始化失败';
   }
 };
 
@@ -152,13 +181,13 @@ const updateChartOptions = () => {
           type: 'cross'
         },
         formatter: function(params) {
-          const date = params[0].axisValue;
+          const date = params[0]?.axisValue || '';
           let htmlStr = `<div style="font-size:14px;color:#666;font-weight:400;line-height:1;">日期：${date}</div>`;
           
           params.forEach(param => {
-            const color = param.color;
-            const seriesName = param.seriesName;
-            const value = param.value;
+            const color = param?.color || '#ddd';
+            const seriesName = param?.seriesName || '';
+            const value = param?.value;
             
             if (seriesName === '资产净值') {
               htmlStr += `<div style="margin-top:5px;"><span style="display:inline-block;margin-right:5px;border-radius:50%;width:10px;height:10px;background-color:${color};"></span>${seriesName}：${value && value[1] ? value[1].toFixed(2) : 'N/A'}</div>`;
@@ -221,7 +250,7 @@ const updateChartOptions = () => {
             rotate: 45,
             formatter: function(value) {
               // 简化日期显示，提高清晰度
-              return value.substring(5); // 仅显示月-日
+              return value?.substring(5) || ''; // 仅显示月-日
             }
           }
         },
@@ -236,7 +265,7 @@ const updateChartOptions = () => {
             fontSize: 10,
             rotate: 45,
             formatter: function(value) {
-              return value.substring(5);
+              return value?.substring(5) || '';
             }
           }
         }
@@ -357,6 +386,7 @@ const updateChartOptions = () => {
     console.log('图表选项已更新');
   } catch (error) {
     console.error('更新图表选项错误:', error);
+    chartError.value = error.message || '更新图表数据失败';
   }
 };
 
@@ -374,7 +404,7 @@ onMounted(() => {
     // 使用 setTimeout 确保 DOM 完全渲染
     setTimeout(() => {
       initChart();
-    }, 300);
+    }, 500);  // 延长等待时间为500ms
   }
 });
 
@@ -390,6 +420,8 @@ onBeforeUnmount(() => {
 // 监听结果变化，更新图表
 watch(() => props.results, (newResults) => {
   console.log('结果数据变化', newResults);
+  chartError.value = null;  // 重置错误状态
+  
   if (newResults && newResults.chart_data) {
     // 使用 setTimeout 确保 DOM 完全渲染
     setTimeout(() => {
@@ -400,7 +432,7 @@ watch(() => props.results, (newResults) => {
         console.log('更新已有图表');
         updateChartOptions();
       }
-    }, 300);
+    }, 500);  // 延长等待时间为500ms
   } else if (chartInstance.value) {
     chartInstance.value.clear();
   }
@@ -412,6 +444,7 @@ watch(() => props.results, (newResults) => {
   height: 70vh;
   width: 100%;
   min-height: 600px;
+  position: relative;
 }
 
 @media (max-width: 768px) {

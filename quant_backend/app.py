@@ -10,9 +10,18 @@ app = Flask(__name__)
 # 配置 CORS
 CORS(app, resources={
     r"/*": {
-        "origins": "*",  # 允许所有来源
+        "origins": [
+            "http://localhost:5173",  # Vite 默认端口
+            "http://localhost:5174",  # 可能的备用端口
+            "http://localhost:5175",  # 可能的备用端口
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:5174",
+            "http://127.0.0.1:5175",
+            "http://192.168.1.*:*",   # 局域网
+            "*"                        # 允许所有源（生产环境应替换为特定域名）
+        ],
         "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"],
+        "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
         "supports_credentials": True
     }
 })
@@ -22,8 +31,17 @@ app.register_blueprint(market_data_bp)
 # 注册策略蓝图
 app.register_blueprint(strategy_bp)
 
-# 初始化 SocketIO
-socketio = SocketIO(app, cors_allowed_origins="*")
+# 初始化 SocketIO，支持跨域
+socketio = SocketIO(app, cors_allowed_origins=[
+    "http://localhost:5173", 
+    "http://localhost:5174",
+    "http://localhost:5175",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174", 
+    "http://127.0.0.1:5175",
+    "http://192.168.1.*",
+    "*"  # 允许所有源（生产环境应替换为特定域名）
+])
 
 @app.route('/')
 def index():

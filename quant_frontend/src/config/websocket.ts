@@ -1,16 +1,23 @@
 import { io, Socket } from 'socket.io-client';
 
 // WebSocket 配置 - 自动检测后端地址
-// 首先尝试使用当前 window.location 的主机名和对应协议
-// 如果运行在开发环境，则默认使用 localhost:5002
 const getBaseUrl = () => {
-  // 如果是生产环境，使用相同的主机名，只改变端口
+  // 获取当前环境 - 通过检查window.location来判断
+  const isProd = window.location.hostname !== 'localhost' && 
+                window.location.hostname !== '127.0.0.1';
+  
+  // 如果是生产环境，使用相对路径（与前端相同域名）
+  if (isProd && window.location.port === '') {
+    return window.location.origin;
+  }
+  
+  // 开发环境 - 如果在非localhost环境运行，使用当前主机名但换端口
   if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
     const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
     return `${protocol}//${window.location.hostname}:5002`;
   }
   
-  // 默认后端地址
+  // 本地开发环境默认后端地址
   return 'http://localhost:5002';
 };
 
@@ -19,47 +26,92 @@ console.log('使用 WebSocket 地址:', WS_BASE_URL);
 
 // 创建 Socket.IO 实例
 export const socket: Socket = io(WS_BASE_URL, {
-  autoConnect: true, // 自动连接
+  autoConnect: false, // 手动控制连接时机
   reconnection: true,
-  reconnectionAttempts: 10,
+  reconnectionAttempts: Infinity, // 无限重连尝试
   reconnectionDelay: 1000,
-  reconnectionDelayMax: 5000,
+  reconnectionDelayMax: 10000, // 增加最大重连延迟
   randomizationFactor: 0.5,
-  transports: ['websocket', 'polling'], // 优先使用 WebSocket
-  timeout: 10000,
-  forceNew: true,
+  timeout: 20000, // 增加连接超时时间
+  transports: ['websocket', 'polling'], // 优先使用 WebSocket，失败时退回到轮询
 });
+
+// 连接状态变量
+let isConnecting = false;
+let retryCount = 0;
+const maxRetryCount = 5;
 
 // WebSocket 事件处理
 export const initWebSocket = () => {
-  // 避免重复事件监听
-  socket.off('connect').on('connect', () => {
+  // 避免重复事件监听，先移除所有已有监听器
+  socket.off('connect');
+  socket.off('connect_error');
+  socket.off('disconnect');
+  socket.off('error');
+  socket.off('server_response');
+  
+  // 重新注册事件监听
+  socket.on('connect', () => {
     console.log('WebSocket连接成功，ID:', socket.id);
+    isConnecting = false;
+    retryCount = 0; // 重置重试计数
   });
 
-  socket.off('connect_error').on('connect_error', (error) => {
+  socket.on('connect_error', (error) => {
     console.error('WebSocket连接错误:', error.message);
+    
+    if (!isConnecting && retryCount < maxRetryCount) {
+      retryCount++;
+      isConnecting = true;
+      console.log(`连接失败，${retryCount}/${maxRetryCount}次重试...`);
+      
+      // 使用递增延迟
+      setTimeout(() => {
+        isConnecting = false;
+        reconnect();
+      }, 2000 * retryCount);
+    } else if (retryCount >= maxRetryCount) {
+      console.error(`已达到最大重试次数(${maxRetryCount})，WebSocket连接失败`);
+    }
   });
 
-  socket.off('disconnect').on('disconnect', (reason) => {
+  socket.on('disconnect', (reason) => {
     console.log('WebSocket连接断开，原因:', reason);
+    
+    // 如果是服务器端断开连接，则尝试重连
+    if (reason === 'io server disconnect') {
+      reconnect();
+    }
   });
 
-  socket.off('error').on('error', (error) => {
+  socket.on('error', (error: any) => {
     console.error('WebSocket错误:', error);
   });
 
   // 监听服务器响应事件
-  socket.off('server_response').on('server_response', (data) => {
+  socket.on('server_response', (data) => {
     console.log('收到服务器响应:', data);
   });
 
   // 初始化 WebSocket 连接
-  if (!socket.connected) {
+  if (!socket.connected && !isConnecting) {
+    reconnect();
+  } else if (socket.connected) {
+    console.log('WebSocket 已连接，ID:', socket.id);
+  }
+};
+
+// 重连逻辑
+const reconnect = () => {
+  if (!socket.connected && !isConnecting) {
     console.log('尝试连接 WebSocket...');
+    isConnecting = true;
     socket.connect();
-  } else {
-    console.log('WebSocket 已连接');
+    
+    // 重置连接状态
+    setTimeout(() => {
+      isConnecting = false;
+    }, 5000);
   }
 };
 
@@ -73,17 +125,40 @@ export const disconnectWebSocket = () => {
   }
 };
 
-// 发送消息到服务器
-export const sendMessage = (event: string, data: any) => {
+// 发送消息到服务器，带重试
+export const sendMessage = (event: string, data: any): boolean => {
   console.log(`尝试发送 ${event} 事件`);
+  
+  // 检查连接状态
   if (socket.connected) {
-    socket.emit(event, data);
-    console.log(`已发送消息: ${event}`, data);
-    return true;
+    try {
+      socket.emit(event, data);
+      console.log(`已发送消息: ${event}`, data);
+      return true;
+    } catch (error: any) {
+      console.error(`发送消息失败: ${error.message}`);
+      return false;
+    }
   } else {
-    console.error(`WebSocket 未连接，无法发送 ${event} 事件`);
+    console.warn(`WebSocket 未连接，正在尝试重连后发送消息...`);
+    
     // 尝试重连
-    socket.connect();
+    reconnect();
+    
+    // 延迟重试发送消息
+    setTimeout(() => {
+      if (socket.connected) {
+        try {
+          socket.emit(event, data);
+          console.log(`重试发送成功: ${event}`, data);
+        } catch (error: any) {
+          console.error(`重试发送失败: ${error.message}`);
+        }
+      } else {
+        console.error(`WebSocket 连接失败，无法发送 ${event} 事件`);
+      }
+    }, 2000);
+    
     return false;
   }
 }; 
