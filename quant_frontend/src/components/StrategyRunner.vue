@@ -134,10 +134,10 @@ const emit = defineEmits(['backtestCompleted']);
 
 // 回测参数
 const params = ref({
-  strategy_name: 'ma_cross', // 固定为 ma_cross
-  symbol: 'TSLA',
-  start_date: '2023-01-01',
-  end_date: '2023-12-31',
+  strategy_name: 'ma_cross',
+  symbol: '',  // 不设默认值，由用户选择
+  start_date: formatDate(new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)),  // 默认90天前
+  end_date: formatDate(new Date()),
   initial_capital: 100000,
   short_window: 20,
   long_window: 50,
@@ -147,8 +147,13 @@ const params = ref({
 const isLoading = ref(false);
 const error = ref('');
 
+// 格式化日期为 YYYY-MM-DD
+function formatDate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
 // 应用预设模板
-const applyTemplate = (type) => {
+const applyTemplate = (type: string) => {
   if (type === 'conservative') {
     params.value = {
       ...params.value,
@@ -168,9 +173,34 @@ const applyTemplate = (type) => {
 
 // 提交回测请求
 const submitBacktest = async () => {
-  // 简单的前端表单验证
+  // 参数验证
+  if (!params.value.symbol) {
+    error.value = '请选择股票';
+    return;
+  }
+
   if (params.value.short_window >= params.value.long_window) {
     error.value = '短期MA窗口必须小于长期MA窗口';
+    return;
+  }
+
+  // 日期验证
+  const start = new Date(params.value.start_date);
+  const end = new Date(params.value.end_date);
+  const now = new Date();
+
+  if (start > end) {
+    error.value = '开始日期不能晚于结束日期';
+    return;
+  }
+
+  if (end > now) {
+    error.value = '结束日期不能晚于今天';
+    return;
+  }
+
+  if (params.value.initial_capital <= 0) {
+    error.value = '初始资金必须大于0';
     return;
   }
 

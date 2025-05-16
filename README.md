@@ -19,7 +19,7 @@ quantTrade-aiAgent 是一个面向个人投资者的量化交易系统，提供�
 ### 后端
 - Flask (Python Web 框架)
 - Flask-SocketIO (WebSocket 通信)
-- yfinance (Yahoo Finance 数据获取)
+- AKShare (A股数据获取)
 - pandas (数据处理和分析)
 - NumPy (数学计算)
 
@@ -63,14 +63,22 @@ quantTrade-aiAgent/
 
 ## 功能特点
 
-- **市场数据获取**：从 Yahoo Finance 获取股票历史数据
-- **技术指标计算**：支持移动平均线等技术指标
+- **市场数据获取**：通过 AKShare 获取 A 股股票历史数据
+- **技术指标计算**：支持多种技术指标（如 MA、OBV、VR、MFI 等）
 - **策略回测**：基于历史数据执行交易策略回测
 - **实时数据可视化**：交互式图表展示价格、指标和交易信号
 - **WebSocket 实时通信**：前后端实时数据交互
 - **响应式设计**：适配桌面端和移动端的界面
 - **策略预设模板**：提供保守型和激进型预设策略
 - **绩效分析**：计算关键绩效指标如年化收益率、最大回撤和夏普比率
+
+## 近期修复与更新
+
+- **数据源切换**：已将所有历史行情和指标数据源切换为 AKShare，彻底去除 yfinance 依赖。
+- **日期选择链路修复**：前端 el-date-picker 组件 v-model 需为 Date 对象，已修复 value-format 导致的类型不一致问题，保证日期选择与后端数据链路完全兼容。
+- **指标可视化链路打通**：修复了前端日期输入导致的指标计算失败问题，现可直接选择股票和日期区间，自动拉取并渲染指标图表。
+- **E2E 测试兼容性说明**：Element Plus 的 el-select 远程模式在 Cypress headless 环境下存在兼容性问题，建议手动测试或关注社区后续修复。
+- **前后端接口健壮性增强**：增加了参数校验、错误提示和日志，提升了系统稳定性和可观测性。
 
 ## API 接口说明
 
@@ -80,6 +88,14 @@ quantTrade-aiAgent/
 - `GET /api/market_data/historical`：获取股票历史数据
   - 参数：symbol（股票代码）, start_date（开始日期）, end_date（结束日期）
   - 响应：包含日期、收盘价和交易量的时间序列数据
+
+- `GET /api/market_data/stock_list`：获取A股股票列表
+  - 参数：无
+  - 响应：股票代码和名称列表
+
+- `GET /api/market_data/indicators`：获取技术指标
+  - 参数：ts_code（股票代码）, start_date, end_date, period, ma_windows, vma_windows
+  - 响应：多种技术指标的时间序列数据
 
 - `GET /api/market_data/latest_price`：获取最新价格
   - 参数：symbol（股票代码）
@@ -158,159 +174,27 @@ quantTrade-aiAgent/
    - 打开浏览器，访问 http://localhost:5173 (或终端显示的其他端口)
 
 2. **策略回测**
-   - 填写股票代码（例如：TSLA）
-   - 设置回测时间范围
+   - 填写股票代码（如：000001.SZ）
+   - 设置回测时间范围（日期选择需为 Date 对象，格式如 2022-05-01）
    - 输入初始资金数额
    - 调整短期和长期移动平均线窗口期
    - 点击"运行回测"按钮
 
-3. **查看回测结果**
-   - 图表展示股票价格、移动平均线和交易信号
+3. **查看回测结果与指标可视化**
+   - 图表展示股票价格、技术指标和交易信号
    - 绩效指标显示总收益率、年化收益率、最大回撤和夏普比率
    - 交易记录表格展示各笔交易详情
+   - 指标可视化面板支持独立选择股票和日期区间，选择后自动拉取并渲染指标图表
 
 4. **使用预设模板**
    - 可以点击预设的策略模板（保守型、激进型）快速填充参数
 
-## 系统演示
+## E2E 测试与调试说明
 
-系统主要分为三个部分：
-
-1. **策略参数设置区**：左侧面板用于设置回测参数和运行策略
-2. **交易图表**：右侧上方展示价格走势、移动平均线和交易信号
-3. **绩效指标**：右侧下方展示策略的表现指标和交易记录
-
-回测完成后，系统会自动生成交易信号图表和绩效指标：
-
-- 蓝色线条：股票价格
-- 绿色/红色线条：短期/长期移动平均线 
-- 绿色箭头：买入信号
-- 红色箭头：卖出信号
-- 下方蓝色区域：资产净值变化
-
-绩效指标面板会显示总收益率、年化收益率、最大回撤等关键指标，以及详细的交易记录。
-
-## CI/CD 集成
-
-本项目已配置 GitHub Actions 进行自动化测试和部署。当您将代码推送到 GitHub 仓库或创建 Pull Request 时，会自动触发测试流程。
-
-### 自动测试配置
-
-在项目根目录下创建 `.github/workflows/ci.yml` 文件以配置 GitHub Actions 工作流：
-
-```yaml
-name: Python Flask + Vue CI
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  backend-test:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-        
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pytest pytest-cov
-        pip install -r requirements.txt
-        
-    - name: Run backend tests
-      run: |
-        cd quant_backend
-        PYTHONPATH=.. pytest --cov=. --cov-report=xml
-        
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./quant_backend/coverage.xml
-        flags: backend
-
-  frontend-test:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '16.x'
-        
-    - name: Install dependencies
-      run: |
-        cd quant_frontend
-        npm install
-        
-    - name: Run frontend tests
-      run: |
-        cd quant_frontend
-        npm run test:unit
-        
-    - name: Build frontend
-      run: |
-        cd quant_frontend
-        npm run build
-```
-
-### 部署配置示例
-
-对于自动部署，可以添加部署步骤到 CI 工作流文件中：
-
-```yaml
-deploy:
-  needs: [backend-test, frontend-test]
-  if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-  runs-on: ubuntu-latest
-  
-  steps:
-  - uses: actions/checkout@v4
-  
-  # 构建前端
-  - name: Set up Node.js
-    uses: actions/setup-node@v3
-    with:
-      node-version: '16.x'
-      
-  - name: Build frontend
-    run: |
-      cd quant_frontend
-      npm install
-      npm run build
-  
-  # 部署到服务器
-  - name: Deploy to server
-    uses: appleboy/scp-action@master
-    with:
-      host: ${{ secrets.HOST }}
-      username: ${{ secrets.USERNAME }}
-      key: ${{ secrets.SSH_KEY }}
-      source: "quant_backend/, quant_frontend/dist/, requirements.txt"
-      target: "/path/to/deploy"
-      
-  - name: Setup remote server
-    uses: appleboy/ssh-action@master
-    with:
-      host: ${{ secrets.HOST }}
-      username: ${{ secrets.USERNAME }}
-      key: ${{ secrets.SSH_KEY }}
-      script: |
-        cd /path/to/deploy
-        python -m venv venv || true
-        source venv/bin/activate
-        pip install -r requirements.txt
-        sudo systemctl restart quant-agent.service
-```
+- 推荐使用 Cypress 进行端到端测试。
+- 由于 Element Plus 的 el-select 远程模式在 headless 环境下存在兼容性问题，自动化测试可能无法自动触发下拉渲染。建议在开发环境下用 `npx cypress open` 手动测试关键交互。
+- 前端所有关键交互元素均已添加 data-cy 属性，便于自动化测试定位。
+- 前后端接口均已增加详细日志，便于调试和问题定位。
 
 ## 常见问题 (Q&A)
 
@@ -381,12 +265,12 @@ PYTHONPATH=.. python3 app.py
 
 ### 7. 无法获取股票数据
 
-**问题**: 使用 yfinance 获取数据时返回空或出错
+**问题**: 使用 AKShare 获取数据时返回空或出错
 
 **解决方案**:
-- 确认股票代码正确（例如，"AAPL" 而非 "APPLE"）
+- 确认股票代码正确（例如，"000001.SZ" 而非 "000001.SS"）
 - 检查日期范围是否有效（非交易日可能没有数据）
-- 确保网络连接正常，没有被限制访问 Yahoo Finance
+- 确保网络连接正常，没有被限制访问 AKShare
 - 尝试降低请求频率，避免被 API 限流
 
 ## 待办事项（未来开发计划）
@@ -438,7 +322,7 @@ PYTHONPATH=.. python3 app.py
 
 ## 致谢
 
-- [yfinance](https://github.com/ranaroussi/yfinance) - 提供 Yahoo Finance 数据访问
+- [AKShare](https://github.com/akfamily/akshare) - 提供 A 股股票历史数据访问
 - [ECharts](https://echarts.apache.org/) - 强大的交互式图表库
 - [Vue.js](https://vuejs.org/) - 响应式前端框架
 - [Flask](https://flask.palletsprojects.com/) - 轻量级 Python Web 框架

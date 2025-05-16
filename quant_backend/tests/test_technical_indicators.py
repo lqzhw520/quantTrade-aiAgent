@@ -98,9 +98,24 @@ class TestTechnicalIndicators(unittest.TestCase):
     
     def test_obv(self):
         """测试OBV计算"""
-        obv = TechnicalIndicators.calculate_obv(self.close, self.volume)
+        df = pd.DataFrame({'close': self.close, 'volume': self.volume})
+        obv = TechnicalIndicators.calculate_obv(df)
         self.assertEqual(len(obv), len(self.prices))
         self.assertTrue(obv.notna().all())
+        # 边界：空df
+        empty_df = pd.DataFrame(columns=['close', 'volume'])
+        obv_empty = TechnicalIndicators.calculate_obv(empty_df)
+        self.assertEqual(len(obv_empty), 0)
+        # 边界：缺列
+        bad_df = pd.DataFrame({'close': self.close})
+        obv_bad = TechnicalIndicators.calculate_obv(bad_df)
+        self.assertTrue((obv_bad == 0).all())
+        # 边界：有NaN
+        df_nan = df.copy()
+        df_nan.iloc[5, 0] = np.nan
+        obv_nan = TechnicalIndicators.calculate_obv(df_nan)
+        self.assertEqual(len(obv_nan), len(df_nan))
+        self.assertTrue(obv_nan.notna().all())
     
     def test_ichimoku(self):
         """测试一目均衡图计算"""
@@ -115,6 +130,105 @@ class TestTechnicalIndicators(unittest.TestCase):
         # 有效区间应有数值
         self.assertTrue(span_a.dropna().size > 0)
         self.assertTrue(span_b.dropna().size > 0)
+    
+    def test_vma(self):
+        """测试VMA计算"""
+        df = pd.DataFrame({'volume': self.volume})
+        vma = TechnicalIndicators.calculate_vma(df, window=5)
+        self.assertEqual(len(vma), len(self.volume))
+        # 前4个为均值，后面为滑动均值
+        self.assertTrue(np.isclose(vma.iloc[4], self.volume.iloc[:5].mean()))
+        # 边界：空df
+        empty_df = pd.DataFrame(columns=['volume'])
+        vma_empty = TechnicalIndicators.calculate_vma(empty_df)
+        self.assertEqual(len(vma_empty), 0)
+        # 边界：缺列
+        bad_df = pd.DataFrame({'close': self.close})
+        vma_bad = TechnicalIndicators.calculate_vma(bad_df)
+        self.assertTrue(np.isnan(vma_bad).all())
+        # 边界：有NaN
+        df_nan = df.copy()
+        df_nan.iloc[5, 0] = np.nan
+        vma_nan = TechnicalIndicators.calculate_vma(df_nan)
+        self.assertEqual(len(vma_nan), len(df_nan))
+        # volume为NaN时vma应等于窗口内非NaN的均值
+        self.assertTrue(np.isclose(vma_nan.iloc[5], df_nan['volume'].iloc[1:6].mean(), equal_nan=True))
+    
+    def test_vr(self):
+        """测试VR计算"""
+        df = pd.DataFrame({'volume': self.volume})
+        vr = TechnicalIndicators.calculate_vr(df, window=5)
+        self.assertEqual(len(vr), len(self.volume))
+        # 前window个为NaN
+        self.assertTrue(np.isnan(vr.iloc[0]))
+        # 边界：空df
+        empty_df = pd.DataFrame(columns=['volume'])
+        vr_empty = TechnicalIndicators.calculate_vr(empty_df)
+        self.assertEqual(len(vr_empty), 0)
+        # 边界：缺列
+        bad_df = pd.DataFrame({'close': self.close})
+        vr_bad = TechnicalIndicators.calculate_vr(bad_df)
+        self.assertTrue(np.isnan(vr_bad).all())
+        # 边界：有NaN
+        df_nan = df.copy()
+        df_nan.iloc[5, 0] = np.nan
+        vr_nan = TechnicalIndicators.calculate_vr(df_nan)
+        self.assertEqual(len(vr_nan), len(df_nan))
+        self.assertTrue(np.isnan(vr_nan.iloc[5]))
+        # 边界：窗口大于数据长度
+        short_df = pd.DataFrame({'volume': self.volume.iloc[:3]})
+        vr_short = TechnicalIndicators.calculate_vr(short_df, window=10)
+        self.assertEqual(len(vr_short), 3)
+        self.assertTrue(np.isnan(vr_short).all())
+    
+    def test_mfi(self):
+        """测试MFI计算"""
+        df = pd.DataFrame({
+            'high': self.high,
+            'low': self.low,
+            'close': self.close,
+            'volume': self.volume
+        })
+        mfi = TechnicalIndicators.calculate_mfi(df, window=14)
+        self.assertEqual(len(mfi), len(self.close))
+        # 前window-1个为NaN
+        self.assertTrue(mfi.iloc[:13].isna().all())
+        # 边界：空df
+        empty_df = pd.DataFrame(columns=['high', 'low', 'close', 'volume'])
+        mfi_empty = TechnicalIndicators.calculate_mfi(empty_df)
+        self.assertEqual(len(mfi_empty), 0)
+        # 边界：缺列
+        bad_df = pd.DataFrame({'close': self.close, 'volume': self.volume})
+        mfi_bad = TechnicalIndicators.calculate_mfi(bad_df)
+        self.assertTrue(np.isnan(mfi_bad).all())
+        # 边界：有NaN
+        df_nan = df.copy()
+        df_nan.iloc[5, 0] = np.nan
+        mfi_nan = TechnicalIndicators.calculate_mfi(df_nan)
+        self.assertEqual(len(mfi_nan), len(df_nan))
+        self.assertTrue(np.isnan(mfi_nan.iloc[5]))
+    
+    def test_pma(self):
+        """测试PMA计算"""
+        df = pd.DataFrame({'close': self.close})
+        pma = TechnicalIndicators.calculate_pma(df, window=5)
+        self.assertEqual(len(pma), len(self.close))
+        # 前4个为均值，后面为滑动均值
+        self.assertTrue(np.isclose(pma.iloc[4], self.close.iloc[:5].mean()))
+        # 边界：空df
+        empty_df = pd.DataFrame(columns=['close'])
+        pma_empty = TechnicalIndicators.calculate_pma(empty_df)
+        self.assertEqual(len(pma_empty), 0)
+        # 边界：缺列
+        bad_df = pd.DataFrame({'volume': self.volume})
+        pma_bad = TechnicalIndicators.calculate_pma(bad_df)
+        self.assertTrue(np.isnan(pma_bad).all())
+        # 边界：有NaN
+        df_nan = df.copy()
+        df_nan.iloc[5, 0] = np.nan
+        pma_nan = TechnicalIndicators.calculate_pma(df_nan)
+        self.assertEqual(len(pma_nan), len(df_nan))
+        self.assertTrue(np.isclose(pma_nan.iloc[5], df_nan['close'].iloc[1:6].mean(), equal_nan=True))
 
 if __name__ == '__main__':
     unittest.main() 
