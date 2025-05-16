@@ -130,6 +130,7 @@ export interface BacktestResult {
     total_return: number;
     annual_return: number;
     max_drawdown: number;
+    sharpe_ratio?: number;
   };
   chart_data: {
     dates: string[];
@@ -140,6 +141,31 @@ export interface BacktestResult {
     sell_signals: Array<{ date: string; price: number }>;
     equity_curve: Array<{ date: string; value: number }>;
   };
+}
+
+// 获取A股股票列表
+export interface StockItem {
+  ts_code: string;
+  name: string;
+}
+
+export interface IndicatorParams {
+  ts_code: string;
+  period?: string;
+  start_date: string;
+  end_date: string;
+  ma_windows?: string;   // 例如 "5,20,60"
+  vma_windows?: string;  // 例如 "5"
+}
+
+export interface IndicatorResult {
+  dates: string[];
+  close: number[];
+  volume: number[];
+  obv: number[];
+  vr: number[];
+  mfi: number[];
+  [key: string]: number[] | string[]; // 支持动态窗口如 vma_5, pma_20
 }
 
 // API 服务
@@ -157,10 +183,34 @@ export const apiService = {
   // 执行回测
   runBacktest: async (params: BacktestParams): Promise<BacktestResult> => {
     try {
-      return await api.post('/api/strategy/backtest', params);
+      // 转换日期格式为 YYYY-MM-DD
+      const formattedParams = {
+        ...params,
+        start_date: params.start_date.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'),
+        end_date: params.end_date.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')
+      };
+      
+      console.log('发送回测请求，参数:', formattedParams);
+      const { data } = await api.post<BacktestResult>('/api/strategy/backtest', formattedParams);
+      return data;
     } catch (error: any) {
       console.error('回测执行失败:', error.message);
       throw error;
     }
+  },
+
+  // 获取股票列表
+  getStockList: async (): Promise<StockItem[]> => {
+    const res = await api.get('/api/market_data/stock_list');
+    // 兼容后端返回 {data: [...]}
+    if (res && Array.isArray(res.data)) {
+      return res.data;
+    }
+    return [];
+  },
+
+  // 获取技术指标
+  getIndicators: async (params: IndicatorParams): Promise<IndicatorResult> => {
+    return api.get('/api/market_data/indicators', { params });
   }
 }; 

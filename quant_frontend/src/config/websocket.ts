@@ -2,23 +2,13 @@ import { io, Socket } from 'socket.io-client';
 
 // WebSocket 配置 - 自动检测后端地址
 const getBaseUrl = () => {
-  // 获取当前环境 - 通过检查window.location来判断
-  const isProd = window.location.hostname !== 'localhost' && 
-                window.location.hostname !== '127.0.0.1';
-  
-  // 如果是生产环境，使用相对路径（与前端相同域名）
-  if (isProd && window.location.port === '') {
-    return window.location.origin;
+  // 优先使用后端 API 地址（与 api.ts 保持一致）
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:5002';
   }
-  
-  // 开发环境 - 如果在非localhost环境运行，使用当前主机名但换端口
-  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-    return `${protocol}//${window.location.hostname}:5002`;
-  }
-  
-  // 本地开发环境默认后端地址
-  return 'http://localhost:5002';
+  // 生产环境：同域名+5002端口
+  const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+  return `${protocol}//${window.location.hostname}:5002`;
 };
 
 export const WS_BASE_URL = getBaseUrl();

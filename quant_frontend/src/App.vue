@@ -18,12 +18,16 @@
         <!-- 主要内容区域 - 采用双列布局 -->
         <div class="flex flex-col lg:flex-row lg:space-x-6">
           
-          <!-- 左侧控制面板 - 固定宽度 -->
-          <div class="w-full lg:w-96 flex-shrink-0 mb-6 lg:mb-0">
+          <!-- 左侧控制面板 - 选股与指标可视化 -->
+          <div class="w-full lg:w-2/3 flex-shrink-0 mb-6 lg:mb-0">
+            <div class="bg-white rounded-lg shadow p-4 mb-6">
+              <h2 class="text-lg font-bold mb-2">股票选股与多指标可视化</h2>
+              <StockSelector @select="onSelectStock" />
+              <IndicatorChart v-if="indicators" :indicators="indicators" class="mt-4" />
+            </div>
             <div class="sticky top-20">
               <!-- 策略回测面板 -->
               <StrategyRunner @backtest-completed="handleBacktestResults" />
-              
               <!-- 性能指标摘要 - 在小屏幕上不显示，在回测结果下方显示 -->
               <div v-if="backtestResults?.performance" class="mt-4 bg-white rounded-lg shadow p-4 hidden lg:block">
                 <h3 class="text-lg font-medium mb-2">主要性能指标</h3>
@@ -60,7 +64,7 @@
           <!-- 右侧结果区域 - 占据剩余空间 -->
           <div class="flex-grow">
             <!-- 结果可视化区域 -->
-            <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="bg-white rounded-lg shadow overflow-hidden mt-6">
               <ResultsChart v-if="backtestResults" :results="backtestResults" />
               <div v-else class="p-8 text-center text-gray-500 min-h-[400px] flex items-center justify-center bg-gray-50">
                 <div>
@@ -104,6 +108,10 @@ import { initWebSocket, disconnectWebSocket, sendMessage, socket } from './confi
 import StrategyRunner from './components/StrategyRunner.vue';
 import ResultsChart from './components/ResultsChart.vue';
 import PerformanceMetrics from './components/PerformanceMetrics.vue';
+import StockSelector from './components/StockSelector.vue';
+import IndicatorChart from './components/IndicatorChart.vue';
+import { apiService } from './services/api';
+import type { IndicatorResult, BacktestResult as ApiBacktestResult } from './services/api';
 
 // WebSocket状态
 const socketStatus = ref<string | null>('disconnected');
@@ -135,23 +143,70 @@ onUnmounted(() => {
 });
 
 // 回测结果
-const backtestResults = ref(null);
+const backtestResults = ref<ApiBacktestResult | null>(null);
+const indicators = ref<IndicatorResult | null>(null);
 
 // 处理回测结果
-function handleBacktestResults(results) {
+function handleBacktestResults(results: ApiBacktestResult) {
   console.log('回测结果:', results);
   backtestResults.value = results;
-  
-  // 如果缺少sharpe_ratio属性，补充一个估算值
-  if (results && results.performance && !results.performance.sharpe_ratio) {
+  if (results && results.performance && typeof results.performance.sharpe_ratio === 'undefined') {
     const totalReturn = results.performance.total_return;
     const maxDrawdown = Math.abs(results.performance.max_drawdown);
-    
-    // 简单估计夏普比率 (收益/风险)
     if (maxDrawdown > 0) {
       results.performance.sharpe_ratio = totalReturn / maxDrawdown;
     } else {
-      results.performance.sharpe_ratio = totalReturn > 0 ? 3 : 0; // 默认值
+      results.performance.sharpe_ratio = totalReturn > 0 ? 3 : 0;
+    }
+  }
+}
+
+async function onSelectStock(ts_code: string, dateRange?: [Date, Date]) {
+  indicators.value = null;
+  try {
+    let startDate: string, endDate: string;
+    
+    if (dateRange && dateRange.length === 2) {
+      // 健壮性判断，确保为合法Date
+      const [startRaw, endRaw] = dateRange;
+      const startObj = (startRaw instanceof Date && !isNaN(startRaw.getTime())) ? startRaw : new Date(startRaw);
+      const endObj = (endRaw instanceof Date && !isNaN(endRaw.getTime())) ? endRaw : new Date(endRaw);
+      if (isNaN(startObj.getTime()) || isNaN(endObj.getTime())) {
+        indicators.value = null;
+        console.error('无效日期:', dateRange);
+        return;
+      }
+      startDate = startObj.toISOString().slice(0, 10).replace(/-/g, '');
+      endDate = endObj.toISOString().slice(0, 10).replace(/-/g, '');
+    } else {
+      // 默认使用最近7天
+      const now = new Date();
+      const end = new Date(now);
+      const start = new Date(now);
+      start.setDate(start.getDate() - 7);
+      endDate = end.toISOString().slice(0, 10).replace(/-/g, '');
+      startDate = start.toISOString().slice(0, 10).replace(/-/g, '');
+    }
+    
+    console.log('请求指标数据:', { ts_code, startDate, endDate });
+    
+    const res = await apiService.getIndicators({
+      ts_code,
+      start_date: startDate,
+      end_date: endDate,
+      ma_windows: '5,20,60',
+      vma_windows: '5'
+    });
+    
+    indicators.value = res;
+    console.log('获取指标数据成功:', res);
+  } catch (e: any) {
+    indicators.value = null;
+    console.error('获取指标数据失败:', e);
+    if (e?.response?.data) {
+      console.error('服务器响应:', e.response.data);
+    } else {
+      console.error('错误详情:', e);
     }
   }
 }

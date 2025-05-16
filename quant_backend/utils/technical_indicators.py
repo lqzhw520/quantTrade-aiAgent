@@ -150,22 +150,43 @@ class TechnicalIndicators:
         return k, d
     
     @staticmethod
-    def calculate_obv(close: pd.Series, volume: pd.Series) -> pd.Series:
+    def calculate_obv(df: pd.DataFrame) -> pd.Series:
         """
-        计算能量潮指标 (On-Balance Volume)
-        
-        Args:
-            close: 收盘价序列
-            volume: 成交量序列
-            
-        Returns:
-            OBV 指标序列
+        计算能量潮指标 (On-Balance Volume, OBV)
+        OBV 是根据收盘价涨跌决定成交量的加减累计值，用于衡量资金流向。
+        算法：
+            - 若本日收盘价 > 前一日收盘价，则 OBV = 前一日 OBV + 本日成交量
+            - 若本日收盘价 < 前一日收盘价，则 OBV = 前一日 OBV - 本日成交量
+            - 若本日收盘价 = 前一日收盘价，则 OBV = 前一日 OBV
+            - 首日 OBV 设为 0
+        参数:
+            df: 必须包含 'close' 和 'volume' 列的 DataFrame
+        返回:
+            pd.Series，OBV 序列，索引与输入 df 保持一致
+        异常:
+            - 若 df 为空或缺少必要列，返回全 0 序列并记录警告日志
         """
-        price_change = close.diff()
-        obv = pd.Series(0, index=close.index)
-        obv[price_change > 0] = volume[price_change > 0]
-        obv[price_change < 0] = -volume[price_change < 0]
-        return obv.cumsum()
+        if df is None or df.empty:
+            import logging
+            logging.getLogger(__name__).warning('输入 DataFrame 为空，OBV 返回全 0 序列。')
+            return pd.Series(0, index=[])
+        if not set(['close', 'volume']).issubset(df.columns):
+            import logging
+            logging.getLogger(__name__).warning('输入 DataFrame 缺少 close 或 volume 列，OBV 返回全 0 序列。')
+            return pd.Series(0, index=df.index)
+        close = df['close']
+        volume = df['volume']
+        obv = [0]
+        for i in range(1, len(df)):
+            if pd.isna(close.iloc[i]) or pd.isna(close.iloc[i-1]) or pd.isna(volume.iloc[i]):
+                obv.append(obv[-1])
+            elif close.iloc[i] > close.iloc[i-1]:
+                obv.append(obv[-1] + volume.iloc[i])
+            elif close.iloc[i] < close.iloc[i-1]:
+                obv.append(obv[-1] - volume.iloc[i])
+            else:
+                obv.append(obv[-1])
+        return pd.Series(obv, index=df.index)
     
     @staticmethod
     def calculate_ichimoku(high: pd.Series, 
@@ -207,3 +228,121 @@ class TechnicalIndicators:
         lagging_span = low.shift(-displacement)
         
         return conversion_line, base_line, leading_span_a, leading_span_b, lagging_span 
+    
+    @staticmethod
+    def calculate_vma(df: pd.DataFrame, window: int = 5) -> pd.Series:
+        """
+        计算成交量移动平均线（Volume Moving Average, VMA）
+        VMA 用于平滑成交量数据，反映一段时间内的平均成交量水平。
+        算法：
+            - VMA = 当前及前 (window-1) 日成交量的算术平均值
+        参数：
+            df: 必须包含 'volume' 列的 DataFrame
+            window: 移动平均窗口大小，默认为5
+        返回：
+            pd.Series，VMA 序列，索引与输入 df 保持一致
+        异常：
+            - 若 df 为空或缺少 volume 列，返回全 NaN 序列并记录警告日志
+        """
+        if df is None or df.empty:
+            import logging
+            logging.getLogger(__name__).warning('输入 DataFrame 为空，VMA 返回全 NaN 序列。')
+            return pd.Series([float('nan')] * 0)
+        if 'volume' not in df.columns:
+            import logging
+            logging.getLogger(__name__).warning('输入 DataFrame 缺少 volume 列，VMA 返回全 NaN 序列。')
+            return pd.Series([float('nan')] * len(df), index=df.index)
+        return df['volume'].rolling(window=window, min_periods=1).mean()
+    
+    @staticmethod
+    def calculate_vr(df: pd.DataFrame, window: int = 5) -> pd.Series:
+        """
+        计算量比（Volume Ratio, VR）
+        VR = 当日成交量 / 前N日成交量均值，反映当前成交量相对历史均值的放大或缩小。
+        算法：
+            - VR = volume / volume.rolling(window=N).mean().shift(1)
+            - 首 window 日VR为NaN
+        参数：
+            df: 必须包含 'volume' 列的 DataFrame
+            window: 均值窗口大小，默认为5
+        返回：
+            pd.Series，VR序列，索引与输入df一致
+        异常：
+            - 若df为空或缺volume列，返回全NaN序列并记录警告日志
+        """
+        if df is None or df.empty:
+            import logging
+            logging.getLogger(__name__).warning('输入 DataFrame 为空，VR 返回全 NaN 序列。')
+            return pd.Series([float('nan')] * 0)
+        if 'volume' not in df.columns:
+            import logging
+            logging.getLogger(__name__).warning('输入 DataFrame 缺少 volume 列，VR 返回全 NaN 序列。')
+            return pd.Series([float('nan')] * len(df), index=df.index)
+        avg_vol = df['volume'].rolling(window=window).mean().shift(1)
+        vr = df['volume'] / avg_vol
+        return vr 
+    
+    @staticmethod
+    def calculate_mfi(df: pd.DataFrame, window: int = 14) -> pd.Series:
+        """
+        计算资金流量指标（Money Flow Index, MFI）
+        MFI 结合价格和成交量，衡量资金流入流出强度，常用于超买超卖判断。
+        算法：
+            1. 计算典型价格 TP = (high + low + close) / 3
+            2. 计算原始资金流 MF = TP * volume
+            3. 区分正向资金流和负向资金流（TP较前一日上涨为正，否则为负）
+            4. 计算N日正/负向资金流之和，得资金流比率 MR = 正向/负向
+            5. MFI = 100 - 100 / (1 + MR)
+        参数：
+            df: 必须包含 high、low、close、volume 列的 DataFrame
+            window: 计算窗口，默认14
+        返回：
+            pd.Series，MFI序列，索引与输入df一致
+        异常：
+            - 若df为空或缺必要列，返回全NaN序列并记录警告日志
+        """
+        required_cols = {'high', 'low', 'close', 'volume'}
+        if df is None or df.empty:
+            import logging
+            logging.getLogger(__name__).warning('输入 DataFrame 为空，MFI 返回全 NaN 序列。')
+            return pd.Series([float('nan')] * 0)
+        if not required_cols.issubset(df.columns):
+            import logging
+            logging.getLogger(__name__).warning('输入 DataFrame 缺少 high/low/close/volume 列，MFI 返回全 NaN 序列。')
+            return pd.Series([float('nan')] * len(df), index=df.index)
+        tp = (df['high'] + df['low'] + df['close']) / 3
+        mf = tp * df['volume']
+        # 正负资金流
+        tp_diff = tp.diff()
+        pos_mf = mf.where(tp_diff > 0, 0)
+        neg_mf = mf.where(tp_diff < 0, 0).abs()
+        pos_sum = pos_mf.rolling(window=window, min_periods=window).sum()
+        neg_sum = neg_mf.rolling(window=window, min_periods=window).sum()
+        mr = pos_sum / neg_sum
+        mfi = 100 - 100 / (1 + mr)
+        return mfi 
+    
+    @staticmethod
+    def calculate_pma(df: pd.DataFrame, window: int = 5) -> pd.Series:
+        """
+        计算价格移动平均线（Price Moving Average, PMA/SMA）
+        PMA/SMA 用于平滑价格数据，反映一段时间内的平均收盘价。
+        算法：
+            - PMA = 当前及前 (window-1) 日收盘价的算术平均值
+        参数：
+            df: 必须包含 'close' 列的 DataFrame
+            window: 移动平均窗口大小，默认为5
+        返回：
+            pd.Series，PMA 序列，索引与输入 df 保持一致
+        异常：
+            - 若 df 为空或缺少 close 列，返回全 NaN 序列并记录警告日志
+        """
+        if df is None or df.empty:
+            import logging
+            logging.getLogger(__name__).warning('输入 DataFrame 为空，PMA 返回全 NaN 序列。')
+            return pd.Series([float('nan')] * 0)
+        if 'close' not in df.columns:
+            import logging
+            logging.getLogger(__name__).warning('输入 DataFrame 缺少 close 列，PMA 返回全 NaN 序列。')
+            return pd.Series([float('nan')] * len(df), index=df.index)
+        return df['close'].rolling(window=window, min_periods=1).mean() 

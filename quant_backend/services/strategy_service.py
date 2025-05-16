@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Any
 import pandas as pd
 import numpy as np
-from utils.technical_indicators import TechnicalIndicators
+from quant_backend.utils.technical_indicators import TechnicalIndicators
 
 class MACrossStrategy:
     """移动平均线交叉策略"""
@@ -17,62 +17,56 @@ class MACrossStrategy:
         self.indicators = TechnicalIndicators()
 
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        生成交易信号
-        Args:
-            data: 价格数据
-        Returns:
-            DataFrame: 包含交易信号的DataFrame
-        """
+        """生成交易信号"""
         data = data.copy()
-        data['short_ma'] = self.indicators.calculate_ma(data['Close'], self.short_window).fillna(0)
-        data['long_ma'] = self.indicators.calculate_ma(data['Close'], self.long_window).fillna(0)
+        
+        # 统一字段名为小写
+        data.columns = data.columns.str.lower()
+        
+        # 使用技术指标类计算移动平均线
+        data['short_ma'] = self.indicators.calculate_pma(data, self.short_window)
+        data['long_ma'] = self.indicators.calculate_pma(data, self.long_window)
+        
+        # 生成交易信号
         data['signal'] = 0.0
-        data.loc[data.index[self.short_window:], 'signal'] = np.where(
-            data['short_ma'][self.short_window:] > data['long_ma'][self.short_window:], 1.0, 0.0)
-        data['position'] = data['signal'].diff().fillna(0)
+        data.loc[data.index[self.long_window:], 'signal'] = np.where(
+            data['short_ma'][self.long_window:] > data['long_ma'][self.long_window:], 1.0, 0.0)
+        data['position'] = data['signal'].diff()
+        
         return data
 
     def backtest(self, data: pd.DataFrame, initial_capital: float = 100000.0) -> Dict[str, Any]:
-        """
-        回测策略，返回结构化结果，便于前端 ECharts 可视化
-        Args:
-            data: 价格数据
-            initial_capital: 初始资金
-        Returns:
-            dict: 包含绩效和图表数据
-        """
+        """回测策略"""
         try:
+            # 生成交易信号
             data = self.generate_signals(data)
-            data['holdings'] = data['signal'] * data['Close']
-            data['cash'] = initial_capital - (data['position'] * data['Close']).cumsum()
+            
+            # 计算持仓和现金
+            data['holdings'] = data['signal'] * data['close']
+            data['cash'] = initial_capital - (data['position'] * data['close']).cumsum()
             data['total'] = data['cash'] + data['holdings']
+            
+            # 计算回测指标
             data['peak'] = data['total'].cummax()
             data['drawdown'] = (data['total'] - data['peak']) / data['peak']
-            # 绩效指标
+            
+            # 计算收益率指标
             total_return = (data['total'].iloc[-1] - initial_capital) / initial_capital
             days = (data.index[-1] - data.index[0]).days
             annual_return = (1 + total_return) ** (365.0 / days) - 1 if days > 0 else 0
             max_drawdown = data['drawdown'].min()
-            # 图表数据
-            dates = data.index.strftime('%Y-%m-%d').tolist()
-            close_prices = data['Close'].round(2).tolist()
-            short_ma = data['short_ma'].round(2).fillna(0).tolist()
-            long_ma = data['long_ma'].round(2).fillna(0).tolist()
-            # 买卖信号点
+            
+            # 提取买卖信号点
             buy_signals = [
-                {"date": str(idx.date()), "price": float(row['Close'])}
-                for idx, row in data[(data['position'] > 0)].iterrows()
+                {"date": str(idx.date()), "price": float(row['close'])}
+                for idx, row in data[data['position'] > 0].iterrows()
             ]
             sell_signals = [
-                {"date": str(idx.date()), "price": float(row['Close'])}
-                for idx, row in data[(data['position'] < 0)].iterrows()
+                {"date": str(idx.date()), "price": float(row['close'])}
+                for idx, row in data[data['position'] < 0].iterrows()
             ]
-            # 资产曲线
-            equity_curve = [
-                {"date": str(idx.date()), "value": float(row['total'])}
-                for idx, row in data.iterrows()
-            ]
+            
+            # 构建返回结果
             return {
                 "performance": {
                     "total_return": round(float(total_return), 4),
@@ -80,18 +74,20 @@ class MACrossStrategy:
                     "max_drawdown": round(float(max_drawdown), 4)
                 },
                 "chart_data": {
-                    "dates": dates,
-                    "close_prices": close_prices,
-                    "short_ma": short_ma,
-                    "long_ma": long_ma,
+                    "dates": data.index.strftime('%Y-%m-%d').tolist(),
+                    "close_prices": data['close'].round(2).tolist(),
+                    "short_ma": data['short_ma'].round(2).fillna(0).tolist(),
+                    "long_ma": data['long_ma'].round(2).fillna(0).tolist(),
                     "buy_signals": buy_signals,
                     "sell_signals": sell_signals,
-                    "equity_curve": equity_curve
+                    "equity_curve": [
+                        {"date": str(idx.date()), "value": float(row['total'])}
+                        for idx, row in data.iterrows()
+                    ]
                 }
             }
         except Exception as e:
             print(f"回测错误: {str(e)}")
-            # 返回一个最小化的结果，避免前端错误
             return {
                 "performance": {
                     "total_return": 0.0,

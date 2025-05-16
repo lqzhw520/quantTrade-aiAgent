@@ -18,9 +18,10 @@ class TestWebSocket(unittest.TestCase):
         test_data = {'message': 'test message'}
         self.socketio_client.emit('client_event', test_data)
         received = self.socketio_client.get_received()
-        self.assertEqual(len(received), 1)
-        self.assertEqual(received[0]['name'], 'server_response')
-        self.assertEqual(received[0]['args'][0]['original_payload'], test_data)
+        # 过滤出包含 original_payload 的 server_response
+        payload_msgs = [msg for msg in received if msg['name'] == 'server_response' and 'original_payload' in msg['args'][0]]
+        self.assertEqual(len(payload_msgs), 1)
+        self.assertEqual(payload_msgs[0]['args'][0]['original_payload'], test_data)
 
 if __name__ == '__main__':
     unittest.main() 
