@@ -1,7 +1,14 @@
+# Web 框架
+Flask==3.0.2
+Flask-CORS==4.0.0
+Flask-SocketIO==5.3.6
+
 # 数据处理和分析
-numpy>=1.26.0
-pandas>=2.2.0
-yfinance>=0.2.0
+numpy==1.26.4
+pandas==2.2.1
+yfinance==0.2.36
+akshare>=1.9.80
+tushare
 
 # 数据可视化
 matplotlib>=3.8.0
@@ -9,6 +16,9 @@ seaborn>=0.13.0
 plotly>=5.18.0
 
 # 技术分析
+# 注意：TA-Lib 需要预先安装其 C 库
+# macOS: brew install ta-lib
+# Linux: wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && tar -xzf ta-lib-0.4.0-src.tar.gz && cd ta-lib/ && ./configure --prefix=/usr && make && sudo make install
 ta-lib>=0.4.0
 pandas-ta==0.3.14b0
 
@@ -18,6 +28,21 @@ backtrader>=1.9.76.123
 # 工具库
 python-dotenv>=0.19.0
 tqdm>=4.62.0
+
+# 依赖库（AKShare/数据抓取/Excel等）
+lxml>=4.2.1
+beautifulsoup4>=4.9.1
+requests>=2.22.0
+openpyxl>=3.0.3
+xlrd>=1.2.0
+tabulate>=0.8.6
+decorator>=4.4.2
+aiohttp>=3.11.13
+html5lib>=1.0.1
+jsonpath>=0.82
+mini-racer>=0.12.4
+nest_asyncio>=1.6.0
+
+# 测试
 pytest>=6.2.5
-tushare
-akshare>=1.9.80 
+pytest-cov 
