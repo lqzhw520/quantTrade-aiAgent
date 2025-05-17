@@ -1,132 +1,123 @@
 <template>
   <div class="p-4 bg-white rounded-lg shadow">
-    <h2 class="text-xl font-bold mb-4">策略回测</h2>
+    <h2 class="text-lg font-bold mb-4">策略回测</h2>
     
-    <form @submit.prevent="submitBacktest" class="space-y-4">
-      <!-- 股票代码 -->
-      <div class="flex flex-col">
-        <label for="symbol" class="text-sm font-medium text-gray-700 mb-1">股票代码</label>
-        <input 
-          id="symbol" 
-          type="text" 
-          v-model="params.symbol"
-          required
-          class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="例如：AAPL, TSLA"
+    <div class="mb-4">
+      <label class="block text-gray-700 mb-2">股票代码</label>
+      <el-input
+        v-model="params.symbol"
+        placeholder="例如: AAPL, TSLA"
+        class="w-full"
+        data-cy="strategy-symbol"
+      />
+    </div>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="mb-4">
+        <label class="block text-gray-700 mb-2">开始日期</label>
+        <el-date-picker
+          v-model="params.start_date"
+          type="date"
+          placeholder="选择开始日期"
+          class="w-full"
+          data-cy="strategy-start-date"
         />
       </div>
       
-      <!-- 日期范围 -->
-      <div class="space-y-3">
-        <div class="flex flex-col">
-          <label for="start_date" class="text-sm font-medium text-gray-700 mb-1">开始日期</label>
-          <input 
-            id="start_date" 
-            type="date" 
-            v-model="params.start_date"
-            required
-            class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div class="flex flex-col">
-          <label for="end_date" class="text-sm font-medium text-gray-700 mb-1">结束日期</label>
-          <input 
-            id="end_date" 
-            type="date" 
-            v-model="params.end_date"
-            required
-            class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+      <div class="mb-4">
+        <label class="block text-gray-700 mb-2">结束日期</label>
+        <el-date-picker
+          v-model="params.end_date"
+          type="date"
+          placeholder="选择结束日期"
+          class="w-full"
+          data-cy="strategy-end-date"
+        />
       </div>
-      
-      <!-- 初始资金 -->
-      <div class="flex flex-col">
-        <label for="initial_capital" class="text-sm font-medium text-gray-700 mb-1">初始资金</label>
-        <input 
-          id="initial_capital" 
-          type="number" 
-          v-model.number="params.initial_capital"
-          required
-          min="1000"
-          class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    </div>
+    
+    <div class="mb-4">
+      <label class="block text-gray-700 mb-2">初始资金</label>
+      <el-input-number 
+        v-model="params.initial_capital" 
+        :min="1000" 
+        :step="10000"
+        class="w-full"
+        data-cy="strategy-capital"
+      />
+    </div>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="mb-4">
+        <label class="block text-gray-700 mb-2">短期 MA</label>
+        <el-input-number 
+          v-model="params.short_window" 
+          :min="5" 
+          :max="params.long_window" 
+          :step="5"
+          class="w-full"
+          data-cy="strategy-short-ma"
         />
       </div>
       
-      <!-- 移动平均窗口 -->
-      <div class="space-y-3">
-        <div class="flex flex-col">
-          <label for="short_window" class="text-sm font-medium text-gray-700 mb-1">短期 MA</label>
-          <div class="flex items-center">
-            <input 
-              id="short_window" 
-              type="number" 
-              v-model.number="params.short_window"
-              required
-              min="5"
-              max="50"
-              class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
-            />
-            <span class="ml-2 text-gray-500 text-sm">天</span>
-          </div>
-        </div>
-        <div class="flex flex-col">
-          <label for="long_window" class="text-sm font-medium text-gray-700 mb-1">长期 MA</label>
-          <div class="flex items-center">
-            <input 
-              id="long_window" 
-              type="number" 
-              v-model.number="params.long_window"
-              required
-              min="20"
-              max="200"
-              class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
-            />
-            <span class="ml-2 text-gray-500 text-sm">天</span>
-          </div>
-        </div>
+      <div class="mb-4">
+        <label class="block text-gray-700 mb-2">长期 MA</label>
+        <el-input-number 
+          v-model="params.long_window" 
+          :min="params.short_window" 
+          :step="5"
+          class="w-full"
+          data-cy="strategy-long-ma"
+        />
       </div>
-      
-      <!-- 提交按钮 -->
-      <button 
-        type="submit" 
-        :disabled="isLoading"
-        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md disabled:bg-blue-300 disabled:cursor-not-allowed"
-      >
-        {{ isLoading ? '正在回测...' : '运行回测' }}
-      </button>
-      
-      <!-- 错误信息显示 -->
-      <div v-if="error" class="p-3 bg-red-100 text-red-700 rounded-md">
-        {{ error }}
+    </div>
+    
+    <el-button 
+      type="primary" 
+      @click="submitBacktest" 
+      :disabled="isLoading || !isFormValid"
+      :loading="isLoading"
+      class="w-full mt-4 mb-2"
+      data-cy="run-backtest-btn"
+    >
+      {{ isLoading ? '回测中...' : '运行策略回测' }}
+    </el-button>
+    
+    <el-alert
+      v-if="error"
+      :title="error"
+      type="error"
+      show-icon
+      :closable="false"
+      class="mt-4"
+      data-cy="strategy-error"
+    />
+    
+    <!-- 预设模板选择 -->
+    <div class="mt-4">
+      <h3 class="text-sm font-medium text-gray-700 mb-2">预设策略模板</h3>
+      <div class="grid grid-cols-2 gap-2">
+        <button 
+          type="button"
+          @click="applyTemplate('conservative')"
+          class="text-left p-2 text-xs border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          保守型 (长期)
+        </button>
+        <button 
+          type="button"
+          @click="applyTemplate('aggressive')"
+          class="text-left p-2 text-xs border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          激进型 (短期)
+        </button>
       </div>
-      
-      <!-- 预设模板选择 -->
-      <div class="mt-4">
-        <h3 class="text-sm font-medium text-gray-700 mb-2">预设策略模板</h3>
-        <div class="grid grid-cols-2 gap-2">
-          <button 
-            type="button"
-            @click="applyTemplate('conservative')"
-            class="text-left p-2 text-xs border border-gray-300 rounded-md hover:bg-gray-50"
-          >
-            保守型 (长期)
-          </button>
-          <button 
-            type="button"
-            @click="applyTemplate('aggressive')"
-            class="text-left p-2 text-xs border border-gray-300 rounded-md hover:bg-gray-50"
-          >
-            激进型 (短期)
-          </button>
-        </div>
-      </div>
-    </form>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { apiService } from '../services/api';
 
 const props = defineProps({});
@@ -146,6 +137,16 @@ const params = ref({
 // 状态管理
 const isLoading = ref(false);
 const error = ref('');
+
+// 添加表单验证计算属性
+const isFormValid = computed(() => {
+  return params.value.symbol && 
+         params.value.start_date && 
+         params.value.end_date && 
+         params.value.initial_capital >= 1000 &&
+         params.value.short_window >= 5 &&
+         params.value.long_window > params.value.short_window;
+});
 
 // 格式化日期为 YYYY-MM-DD
 function formatDate(date: Date): string {
@@ -238,5 +239,13 @@ input::-webkit-inner-spin-button {
 
 input[type=number] {
   -moz-appearance: textfield;
+}
+
+:deep(.el-input-number) {
+  width: 100%;
+}
+
+:deep(.el-date-editor) {
+  width: 100%;
 }
 </style> 

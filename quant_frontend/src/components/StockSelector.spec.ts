@@ -62,7 +62,7 @@ describe('StockSelector.vue', () => {
     
     // 使用 mockStocks[1].ts_code 代替硬编码
     const code = mockStocks[1].ts_code;
-    (wrapper.vm as any).onStockSelect(code);
+    (wrapper.vm as any).handleStockChange(code);
     await nextTick();
     
     expect(wrapper.emitted('select')).toBeTruthy();
@@ -79,12 +79,12 @@ describe('StockSelector.vue', () => {
     
     // 先选择股票
     const code = mockStocks[1].ts_code;
-    (wrapper.vm as any).selectedCode = code;
+    (wrapper.vm as any).selectedStock = code;
     
     // 设置日期并触发变更
     (wrapper.vm as any).startDate = new Date('2025-01-01');
     (wrapper.vm as any).endDate = new Date('2025-01-15');
-    (wrapper.vm as any).onDateChange();
+    (wrapper.vm as any).handleDateChange();
     await nextTick();
     
     expect(wrapper.emitted('select')).toBeTruthy();
