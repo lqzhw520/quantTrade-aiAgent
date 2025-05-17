@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 
 # 保证可以导入服务模块
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from services import akshare_service
+from quant_backend.services import akshare_service
 
 class TestAkshareService(unittest.TestCase):
     @patch('akshare.stock_info_a_code_name')

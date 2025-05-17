@@ -1,0 +1,76 @@
+### ✅ 更新后的 `.cursorrules`
+
+```mdc
+---
+rule: "自动加载交易前后端核心模块"
+description: "让 Agent 在进行 bug 修复或功能生成前始终加载最关键的业务模块"
+globs: [
+  "quant_frontend/src/components/**/*.vue",
+  "quant_frontend/src/services/**/*.ts",
+  "quant_frontend/src/config/**/*.ts",
+  "quant_backend/api/**/*.py",
+  "quant_backend/services/**/*.py",
+  "quant_backend/utils/**/*.py"
+]
+alwaysApply: true
+---
+
+---
+rule: "始终加载项目记忆文件"
+description: "使 Agent 在多轮调试中保留项目结构、接口和易错点上下文"
+files: ["memories.md"]
+alwaysApply: true
+---
+
+---
+rule: "检查日期类型转换"
+description: "确保前端日期处理使用正确类型和格式，避免类型不一致问题"
+globs: [
+  "quant_frontend/src/components/**/*.vue",
+  "quant_frontend/src/services/**/*.ts"
+]
+alwaysApply: true
+---
+
+---
+rule: "Element Plus组件兼容性"
+description: "注意Element Plus组件特性与测试框架的兼容性，特别是el-select远程模式在自动化测试中的问题"
+globs: [
+  "quant_frontend/src/components/**/*.vue",
+  "cypress/e2e/**/*.ts"
+]
+alwaysApply: true
+---
+
+---
+rule: "AKShare数据源参数校验"
+description: "确保所有AKShare接口调用都有参数校验和错误处理，特别关注日期格式和股票代码有效性"
+globs: [
+  "quant_backend/services/**/*.py"
+]
+alwaysApply: true
+---
+
+---
+rule: "添加data-cy标记"
+description: "为所有关键UI交互元素添加data-cy属性以便自动化测试"
+globs: [
+  "quant_frontend/src/components/**/*.vue"
+]
+alwaysApply: true
+---
+
+---
+rule: "修复完成后运行后端测试"
+description: "强制 Agent 修复完成后调用 pytest 测试用例验证逻辑"
+command: "cd quant_backend && pytest"
+alwaysApply: true
+---
+
+---
+rule: "修复完成后运行前端组件测试"
+description: "强制 Agent 修复前端逻辑后执行 Vitest 单元测试"
+command: "cd quant_frontend && npm run test"
+alwaysApply: true
+---
+```
