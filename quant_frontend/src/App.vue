@@ -118,7 +118,18 @@ const backtestResults = ref<ApiBacktestResult | null>(null);
 const indicators = ref<IndicatorResult | null>(null);
 
 function handleBacktestResults(results: ApiBacktestResult) {
+  console.log('🎯 App.vue: 收到回测结果', results);
+  console.log('🎯 结果结构检查:', {
+    hasResults: !!results,
+    hasPerformance: !!results?.performance,
+    hasChartData: !!results?.chart_data,
+    chartDataKeys: results?.chart_data ? Object.keys(results.chart_data) : [],
+    buySignalsCount: results?.chart_data?.buy_signals?.length || 0,
+    sellSignalsCount: results?.chart_data?.sell_signals?.length || 0
+  });
+  
   backtestResults.value = results;
+  
   if (results && results.performance && typeof results.performance.sharpe_ratio === 'undefined') {
     const totalReturn = results.performance.total_return;
     const maxDrawdown = Math.abs(results.performance.max_drawdown);
@@ -127,7 +138,10 @@ function handleBacktestResults(results: ApiBacktestResult) {
     } else {
       results.performance.sharpe_ratio = totalReturn > 0 ? 3 : 0;
     }
+    console.log('🎯 添加夏普比率:', results.performance.sharpe_ratio);
   }
+  
+  console.log('🎯 backtestResults.value 已设置:', backtestResults.value);
 }
 
 async function onSelectStock(ts_code: string, dateRange?: [Date, Date]) {

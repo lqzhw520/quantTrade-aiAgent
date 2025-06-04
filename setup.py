@@ -10,7 +10,7 @@ setup(
         "flask-cors",
         "pandas",
         "numpy",
-        "yfinance",
+        "akshare",
     ],
     python_requires=">=3.8",
 ) 

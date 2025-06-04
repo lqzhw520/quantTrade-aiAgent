@@ -6,7 +6,6 @@ Flask-SocketIO==5.3.6
 # 数据处理和分析
 numpy==1.26.4
 pandas==2.2.1
-yfinance==0.2.36
 akshare>=1.9.80
 tushare
 

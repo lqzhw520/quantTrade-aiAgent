@@ -118,11 +118,22 @@ export interface HistoricalData {
 export interface BacktestParams {
   strategy_name: string;
   symbol: string;
-  start_date: string;
-  end_date: string;
+  start_date: string | Date;  // 允许Date或字符串类型
+  end_date: string | Date;    // 允许Date或字符串类型
   initial_capital: number;
-  short_window: number;
-  long_window: number;
+  
+  // 均线交叉策略参数
+  short_window?: number;
+  long_window?: number;
+  
+  // 交易量突破策略参数
+  volume_window?: number;
+  volume_mult?: number;
+  price_change_threshold?: number;
+  lookback_days?: number;
+  
+  // 其他可能的通用参数
+  [key: string]: any;
 }
 
 export interface BacktestResult {
@@ -168,6 +179,9 @@ export interface IndicatorResult {
   [key: string]: number[] | string[]; // 支持动态窗口如 vma_5, pma_20
 }
 
+// 回测引擎类型
+export type BacktestEngineType = 'default' | 'backtrader';
+
 // API 服务
 export const apiService = {
   // 获取历史数据
@@ -181,18 +195,49 @@ export const apiService = {
   },
 
   // 执行回测
-  runBacktest: async (params: BacktestParams): Promise<BacktestResult> => {
+  runBacktest: async (params: BacktestParams, engineType: BacktestEngineType = 'default'): Promise<BacktestResult> => {
     try {
+      // 安全的日期格式转换
+      const formatDate = (date: string | Date): string => {
+        if (date instanceof Date) {
+          // Date对象转换为YYYY-MM-DD格式
+          return date.toISOString().slice(0, 10);
+        } else if (typeof date === 'string') {
+          // 如果已经是YYYY-MM-DD格式，直接返回
+          if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            return date;
+          }
+          // 如果是YYYYMMDD格式，转换为YYYY-MM-DD
+          if (/^\d{8}$/.test(date)) {
+            return date.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
+          }
+          // 尝试解析其他字符串格式
+          const parsed = new Date(date);
+          if (!isNaN(parsed.getTime())) {
+            return parsed.toISOString().slice(0, 10);
+          }
+        }
+        // 如果都失败了，抛出错误
+        throw new Error(`无效的日期格式: ${date}`);
+      };
+
       // 转换日期格式为 YYYY-MM-DD
       const formattedParams = {
         ...params,
-        start_date: params.start_date.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'),
-        end_date: params.end_date.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')
+        start_date: formatDate(params.start_date),
+        end_date: formatDate(params.end_date)
       };
       
-      console.log('发送回测请求，参数:', formattedParams);
-      const { data } = await api.post<BacktestResult>('/api/strategy/backtest', formattedParams);
-      return data;
+      // 根据引擎类型选择API端点
+      const endpoint = engineType === 'backtrader' 
+        ? '/api/strategy/backtest_bt' 
+        : '/api/strategy/backtest';
+      
+      console.log(`发送回测请求到 ${endpoint}，参数:`, formattedParams);
+      // 修复类型问题：api.post已经通过响应拦截器返回了data
+      const result = await api.post(endpoint, formattedParams) as BacktestResult;
+      console.log(`回测响应数据:`, result);
+      return result;
     } catch (error: any) {
       console.error('回测执行失败:', error.message);
       throw error;
