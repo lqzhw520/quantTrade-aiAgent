@@ -1,329 +1,432 @@
 # quantTrade-aiAgent
 
-基于 Python Flask 和 Vue3 的全栈量化交易系统，用于个人投资策略回测和分析。
+基于 Python Flask 和 Vue 3 的全栈量化交易系统，支持多引擎策略回测与实时数据可视化。
 
-## 项目简介
+## 🚀 项目简介
 
-quantTrade-aiAgent 是一个面向个人投资者的量化交易系统，提供市场数据获取、策略回测、交易信号生成和结果可视化功能。系统采用现代前后端分离架构，让用户可以通过直观的界面进行策略参数设置和结果分析。
+quantTrade-aiAgent 是一个现代化的量化交易平台，专为个人投资者设计。系统提供完整的策略开发、回测分析和结果可视化功能，采用前后端分离架构，支持多种回测引擎，让量化交易变得更加简单和直观。
 
-## 技术栈
+### ✨ 核心特性
 
-### 前端
-- Vue 3 (组合式 API)
-- TypeScript
-- Vite
-- Tailwind CSS
-- Socket.IO 客户端
-- ECharts (数据可视化)
+- **🔥 双引擎支持**: 内置默认策略引擎 + 专业 Backtrader 引擎
+- **📊 实时数据源**: 基于 AKShare 的 A 股市场数据获取
+- **🎯 策略多样化**: 移动平均线交叉、交易量突破等多种策略
+- **📈 可视化分析**: ECharts 驱动的交互式图表与技术指标
+- **⚡ 实时通信**: WebSocket 实现前后端实时数据交互
+- **🧪 全面测试**: 前后端单元测试 + E2E 自动化测试
+- **📱 响应式设计**: 支持桌面端和移动端访问
 
-### 后端
-- Flask (Python Web 框架)
-- Flask-SocketIO (WebSocket 通信)
-- AKShare (A股数据获取)
-- pandas (数据处理和分析)
-- NumPy (数学计算)
+## 🛠️ 技术栈详解
 
-## 系统架构
+### 前端技术栈
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| **Vue 3** | ^3.4.0 | 渐进式前端框架，采用组合式 API |
+| **TypeScript** | ^5.0.0 | 类型安全的 JavaScript 超集 |
+| **Vite** | ^5.0.0 | 快速构建工具与开发服务器 |
+| **Element Plus** | ^2.8.0 | Vue 3 企业级 UI 组件库 |
+| **ECharts** | ^5.5.0 | 百度开源的数据可视化图表库 |
+| **Tailwind CSS** | ^3.4.0 | 实用优先的 CSS 框架 |
+| **Socket.IO Client** | ^4.7.0 | WebSocket 客户端通信 |
+| **Axios** | ^1.6.0 | HTTP 客户端库 |
+| **Splitpanes** | ^3.1.0 | 可调整大小的面板组件 |
+
+### 后端技术栈
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| **Flask** | ^3.0.0 | 轻量级 Python Web 框架 |
+| **Flask-SocketIO** | ^5.3.0 | WebSocket 服务端支持 |
+| **Flask-CORS** | ^4.0.0 | 跨域资源共享处理 |
+| **Backtrader** | ^1.9.78 | 专业 Python 量化回测框架 |
+| **AKShare** | ^1.14.0 | A 股数据获取库 |
+| **pandas** | ^2.2.0 | 数据分析与处理 |
+| **NumPy** | ^1.26.0 | 数值计算基础库 |
+| **matplotlib** | 3.2.2 | 图表绘制（Backtrader 兼容） |
+
+### 开发与测试工具
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| **Vitest** | ^2.1.0 | 前端单元测试框架 |
+| **Vue Test Utils** | ^2.4.0 | Vue 组件测试工具 |
+| **Cypress** | ^13.0.0 | E2E 自动化测试 |
+| **pytest** | ^7.4.0 | Python 单元测试框架 |
+| **ESLint** | ^9.0.0 | JavaScript/TypeScript 代码检查 |
+
+## 📁 系统架构
 
 ```
 quantTrade-aiAgent/
-├── quant_frontend/                # Vue3 前端
+├── 🎨 quant_frontend/               # Vue 3 前端应用
 │   ├── src/
-│   │   ├── components/           # UI 组件
-│   │   │   ├── StrategyRunner.vue    # 策略运行控制组件
-│   │   │   ├── ResultsChart.vue      # 结果图表组件
-│   │   │   └── PerformanceMetrics.vue # 性能指标组件 
-│   │   ├── config/               # API 和 WebSocket 配置
-│   │   │   └── websocket.ts      # WebSocket 连接配置
-│   │   ├── services/             # API 服务封装
-│   │   │   └── api.ts            # 后端 API 调用
-│   │   ├── assets/               # 静态资源
-│   │   └── main.ts               # 应用入口
-│   ├── public/                   # 静态资源
-│   └── index.html                # HTML 模板
+│   │   ├── components/             # UI 组件库
+│   │   │   ├── StrategyRunner.vue      # 策略执行控制面板
+│   │   │   ├── ResultsChart.vue        # 回测结果图表
+│   │   │   ├── PerformanceMetrics.vue  # 性能指标展示
+│   │   │   ├── StockSelector.vue       # 股票选择器
+│   │   │   ├── IndicatorChart.vue      # 技术指标图表
+│   │   │   └── DashboardLayout.vue     # 仪表板布局
+│   │   ├── services/               # API 服务层
+│   │   │   └── api.ts                  # 统一 API 接口
+│   │   ├── config/                 # 配置文件
+│   │   │   └── websocket.ts            # WebSocket 配置
+│   │   └── types/                  # TypeScript 类型定义
+│   ├── tests/                      # 前端测试
+│   └── cypress/                    # E2E 测试
 │
-├── quant_backend/                 # Flask 后端
-│   ├── api/                      # API 路由
-│   │   ├── market_data_routes.py # 市场数据 API
-│   │   └── strategy_routes.py    # 策略回测 API
-│   ├── services/                 # 业务逻辑服务
-│   │   ├── market_data_service.py # 市场数据服务
-│   │   └── strategy_service.py   # 策略服务
-│   ├── utils/                    # 工具类
-│   │   └── technical_indicators.py # 技术指标计算
-│   ├── tests/                    # 单元测试
-│   └── app.py                    # Flask 应用入口
+├── ⚙️ quant_backend/                # Flask 后端服务
+│   ├── api/                        # RESTful API 路由
+│   │   ├── market_data_routes.py       # 市场数据 API
+│   │   └── strategy_routes.py          # 策略回测 API
+│   ├── services/                   # 业务逻辑服务
+│   │   ├── akshare_service.py          # AKShare 数据服务
+│   │   └── strategy_service.py         # 策略服务
+│   ├── bt_strategies/              # Backtrader 策略模块
+│   │   ├── strategies/                 # 策略实现
+│   │   │   ├── ma_cross_strategy.py        # 均线交叉策略
+│   │   │   └── volume_breakout_strategy.py # 交易量突破策略
+│   │   ├── backtest_runner.py          # 回测执行引擎
+│   │   └── bt_result_parser.py         # 结果解析器
+│   ├── utils/                      # 工具类
+│   │   └── technical_indicators.py    # 技术指标计算
+│   └── tests/                      # 后端测试
 │
-├── .github/                      # GitHub 配置
-│   └── workflows/                # CI/CD 工作流
-│       └── ci.yml                # 持续集成配置
-├── requirements.txt              # Python 依赖
-└── README.md                     # 项目文档
+├── 📋 .github/workflows/            # CI/CD 工作流
+├── 📄 requirements.txt              # Python 依赖管理
+├── 📄 pyproject.toml               # 项目配置
+└── 📚 README.md                    # 项目文档
 ```
 
-## 功能特点
+## 🔧 核心功能模块
 
-- **市场数据获取**：通过 AKShare 获取 A 股股票历史数据
-- **技术指标计算**：支持多种技术指标（如 MA、OBV、VR、MFI 等）
-- **策略回测**：基于历史数据执行交易策略回测
-- **实时数据可视化**：交互式图表展示价格、指标和交易信号
-- **WebSocket 实时通信**：前后端实时数据交互
-- **响应式设计**：适配桌面端和移动端的界面
-- **策略预设模板**：提供保守型和激进型预设策略
-- **绩效分析**：计算关键绩效指标如年化收益率、最大回撤和夏普比率
+### 1. 🎯 双引擎回测系统
 
-## 近期修复与更新
+#### 默认引擎
+- **技术栈**: pandas + NumPy
+- **特点**: 轻量级、快速执行
+- **适用**: 简单策略验证
 
-- **数据源切换**：已将所有历史行情和指标数据源切换为 AKShare，彻底去除 yfinance 依赖。
-- **日期选择链路修复**：前端 el-date-picker 组件 v-model 需为 Date 对象，已修复 value-format 导致的类型不一致问题，保证日期选择与后端数据链路完全兼容。
-- **指标可视化链路打通**：修复了前端日期输入导致的指标计算失败问题，现可直接选择股票和日期区间，自动拉取并渲染指标图表。
-- **E2E 测试兼容性说明**：Element Plus 的 el-select 远程模式在 Cypress headless 环境下存在兼容性问题，建议手动测试或关注社区后续修复。
-- **前后端接口健壮性增强**：增加了参数校验、错误提示和日志，提升了系统稳定性和可观测性。
+#### Backtrader 引擎  
+- **技术栈**: Backtrader 专业框架
+- **特点**: 功能完整、扩展性强
+- **适用**: 复杂策略开发
 
-## API 接口说明
+```typescript
+// 前端引擎切换
+const engineType = ref<BacktestEngineType>('backtrader');
+await apiService.runBacktest(params, engineType);
+```
 
-### 后端 API 接口
+### 2. 📊 数据获取与处理
 
-#### 市场数据接口
-- `GET /api/market_data/historical`：获取股票历史数据
-  - 参数：symbol（股票代码）, start_date（开始日期）, end_date（结束日期）
-  - 响应：包含日期、收盘价和交易量的时间序列数据
+#### AKShare 集成
+- **股票列表**: A 股全市场股票信息
+- **历史数据**: OHLCV 日线数据
+- **技术指标**: MA、OBV、VR、MFI 等
 
-- `GET /api/market_data/stock_list`：获取A股股票列表
-  - 参数：无
-  - 响应：股票代码和名称列表
+```python
+# 后端数据服务
+def get_stock_historical_data(ts_code, start_date, end_date):
+    return ak.stock_zh_a_hist(symbol=ts_code, 
+                              start_date=start_date, 
+                              end_date=end_date)
+```
 
-- `GET /api/market_data/indicators`：获取技术指标
-  - 参数：ts_code（股票代码）, start_date, end_date, period, ma_windows, vma_windows
-  - 响应：多种技术指标的时间序列数据
+### 3. 🎨 交互式可视化
 
-- `GET /api/market_data/latest_price`：获取最新价格
-  - 参数：symbol（股票代码）
-  - 响应：最新价格和时间戳
+#### ECharts 图表系统
+- **价格图表**: K线图、移动平均线
+- **技术指标**: 多指标叠加显示  
+- **交易信号**: 买卖点标记
+- **资金曲线**: 投资组合价值变化
 
-#### 策略接口
-- `POST /api/strategy/backtest`：执行策略回测
-  - 参数：strategy_name, symbol, start_date, end_date, initial_capital, short_window, long_window
-  - 响应：包含绩效指标和图表数据的回测结果
+### 4. ⚡ 实时通信架构
 
-### WebSocket 事件
-- `client_event`：客户端发送消息到服务器
-- `server_response`：服务器响应客户端消息
-- `connect`：WebSocket 连接建立
-- `disconnect`：WebSocket 连接断开
+#### WebSocket 集成
+- **前端**: Socket.IO Client
+- **后端**: Flask-SocketIO
+- **功能**: 实时数据推送、状态同步
 
-## 安装与运行
+## 🚀 快速开始
 
 ### 环境要求
-- Python 3.8+ 
-- Node.js 16+
-- npm 或 yarn
+- **Python**: 3.8+ 
+- **Node.js**: 16+
+- **包管理器**: npm/yarn/pnpm
 
-### 后端设置
+### 🔧 后端部署
 
-1. **克隆仓库**
+1. **环境准备**
    ```bash
    git clone https://github.com/yourusername/quantTrade-aiAgent.git
    cd quantTrade-aiAgent
-   ```
-
-2. **创建虚拟环境**（可选但推荐）
-   ```bash
+   
+   # 创建虚拟环境
    python -m venv venv
-   # Windows
-   venv\Scripts\activate
-   # macOS/Linux
-   source venv/bin/activate
+   source venv/bin/activate  # macOS/Linux
+   # venv\Scripts\activate   # Windows
    ```
 
-3. **安装 Python 依赖**
+2. **依赖安装**
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **启动后端服务**
+3. **启动服务**
    ```bash
    cd quant_backend
    PYTHONPATH=.. python3 app.py
    ```
-   后端服务将在 http://localhost:5002 启动
+   服务地址: http://localhost:5002
 
-### 前端设置
+### 🎨 前端部署
 
-1. **安装 Node.js 依赖**
+1. **依赖安装**
    ```bash
    cd quant_frontend
    npm install
    ```
 
-2. **启动前端开发服务器**
+2. **开发环境**
    ```bash
    npm run dev
    ```
-   前端服务将在 http://localhost:5173 启动（或其他可用端口）
+   访问地址: http://localhost:5173
 
-3. **构建生产环境版本**
+3. **生产构建**
    ```bash
    npm run build
    ```
-   构建后的文件将位于 `dist` 目录中
 
-## 使用指南
+## 📖 使用指南
 
-1. **访问前端界面**
-   - 打开浏览器，访问 http://localhost:5173 (或终端显示的其他端口)
+### 1. 策略回测流程
 
-2. **策略回测**
-   - 填写股票代码（如：000001.SZ）
-   - 设置回测时间范围（日期选择需为 Date 对象，格式如 2022-05-01）
-   - 输入初始资金数额
-   - 调整短期和长期移动平均线窗口期
-   - 点击"运行回测"按钮
+1. **选择回测引擎**
+   - 默认引擎：适合快速验证
+   - Backtrader：适合专业分析
 
-3. **查看回测结果与指标可视化**
-   - 图表展示股票价格、技术指标和交易信号
-   - 绩效指标显示总收益率、年化收益率、最大回撤和夏普比率
-   - 交易记录表格展示各笔交易详情
-   - 指标可视化面板支持独立选择股票和日期区间，选择后自动拉取并渲染指标图表
+2. **配置回测参数**
+   ```vue
+   <template>
+     <el-select v-model="params.strategy_name">
+       <el-option label="均线交叉策略" value="ma_cross" />
+       <el-option label="交易量突破策略" value="volume_breakout" />
+     </el-select>
+   </template>
+   ```
 
-4. **使用预设模板**
-   - 可以点击预设的策略模板（保守型、激进型）快速填充参数
+3. **执行回测分析**
+   - 设置股票代码（如：000001.SZ）
+   - 选择时间范围
+   - 调整策略参数
+   - 点击"运行策略回测"
 
-## E2E 测试与调试说明
+### 2. 结果分析面板
 
-- 推荐使用 Cypress 进行端到端测试。
-- 由于 Element Plus 的 el-select 远程模式在 headless 环境下存在兼容性问题，自动化测试可能无法自动触发下拉渲染。建议在开发环境下用 `npx cypress open` 手动测试关键交互。
-- 前端所有关键交互元素均已添加 data-cy 属性，便于自动化测试定位。
-- 前后端接口均已增加详细日志，便于调试和问题定位。
+#### 性能指标
+- **总收益率**: 投资期间总回报
+- **年化收益率**: 年化投资回报率  
+- **最大回撤**: 最大资金损失幅度
+- **夏普比率**: 风险调整后收益
 
-## 常见问题 (Q&A)
+#### 可视化图表
+- **价格走势**: 股价变化与均线系统
+- **交易信号**: 买入/卖出点位标记
+- **资金曲线**: 投资组合价值变化
+- **技术指标**: 多维度技术分析
 
-### 1. 端口冲突问题
+## 🧪 测试体系
 
-**问题**: 启动服务时出现错误 `Address already in use`
-
-**解决方案**: 
+### 前端测试
 ```bash
-# 查找占用端口的进程
-lsof -i :5002 | grep LISTEN
+# 单元测试
+npm run test
 
-# 终止对应进程
-kill -9 <进程ID>
-
-# 或指定一个不同的端口启动服务
-cd quant_backend && PYTHONPATH=.. python3 app.py --port=5003
+# E2E 测试  
+npm run cypress:open
 ```
 
-### 2. Python 模块导入错误
-
-**问题**: 启动后端时报错 `ModuleNotFoundError: No module named 'quant_backend'`
-
-**解决方案**:
+### 后端测试
 ```bash
-# 确保设置正确的 PYTHONPATH
+# 运行所有测试
+pytest
+
+# Backtrader 集成测试
+pytest bt_strategies/tests/test_backtest_runner.py -v
+
+# AKShare 服务测试
+pytest tests/test_akshare_service.py -v
+```
+
+## 🔄 API 接口文档
+
+### 市场数据接口
+
+#### `GET /api/market_data/historical`
+获取股票历史数据
+```json
+{
+  "symbol": "000001.SZ",
+  "start_date": "2025-01-01", 
+  "end_date": "2025-06-01"
+}
+```
+
+#### `GET /api/market_data/stock_list`
+获取A股股票列表
+```json
+{
+  "data": [
+    {"ts_code": "000001.SZ", "name": "平安银行"},
+    {"ts_code": "000002.SZ", "name": "万科A"}
+  ]
+}
+```
+
+### 策略回测接口
+
+#### `POST /api/strategy/backtest`
+默认引擎回测
+```json
+{
+  "strategy_name": "ma_cross",
+  "symbol": "000001.SZ",
+  "start_date": "2025-01-01",
+  "end_date": "2025-06-01", 
+  "initial_capital": 100000,
+  "short_window": 20,
+  "long_window": 50
+}
+```
+
+#### `POST /api/strategy/backtest_bt`
+Backtrader 引擎回测
+```json
+{
+  "strategy_name": "ma_cross",
+  "symbol": "000001.SZ", 
+  "start_date": "2025-01-01",
+  "end_date": "2025-06-01",
+  "initial_capital": 100000,
+  "short_window": 20,
+  "long_window": 50
+}
+```
+
+## 🎯 策略开发指南
+
+### 创建新策略
+
+1. **Backtrader 策略示例**
+   ```python
+   class CustomStrategy(bt.Strategy):
+       params = (
+           ('period', 20),
+           ('threshold', 0.02),
+       )
+       
+       def __init__(self):
+           self.sma = bt.indicators.SimpleMovingAverage(
+               self.datas[0], period=self.params.period
+           )
+           
+       def next(self):
+           if not self.position:
+               if self.data.close[0] > self.sma[0] * (1 + self.params.threshold):
+                   self.buy()
+           else:
+               if self.data.close[0] < self.sma[0] * (1 - self.params.threshold):
+                   self.sell()
+   ```
+
+2. **注册新策略**
+   ```python
+   # 在 bt_strategies/strategies/__init__.py 中添加
+   from .custom_strategy import CustomStrategy
+   __all__ = ['MaCrossStrategy', 'VolumeBreakoutStrategy', 'CustomStrategy']
+   ```
+
+## ⚠️ 常见问题
+
+### 端口冲突
+```bash
+# 查找占用进程
+lsof -i :5002
+# 或更换端口
+python app.py --port=5003
+```
+
+### 模块导入错误
+```bash
+# 确保正确的 PYTHONPATH
 cd quant_backend
 PYTHONPATH=.. python3 app.py
 ```
 
-### 3. WebSocket 连接问题
+### WebSocket 连接失败
+- 检查后端服务状态
+- 确认 CORS 配置
+- 清除浏览器缓存
 
-**问题**: 前端显示 WebSocket 连接失败
+### 图表显示异常
+- 检查回测参数有效性
+- 确认数据获取成功
+- 调整浏览器窗口大小
 
-**解决方案**:
-- 确保后端服务正常运行
-- 检查浏览器控制台是否有 CORS 错误，确认 app.py 中配置了正确的 CORS 设置
-- 前端 WebSocket 配置中的 URL 是否与后端 URL 匹配
-- 尝试在浏览器控制台执行 `localStorage.clear()` 清除可能的缓存
+## 🗺️ 开发路线图
 
-### 4. 图表显示不正确
+### 🚧 进行中
+- [ ] 多品种组合回测
+- [ ] 策略性能优化算法
+- [ ] 实时行情数据接入
 
-**问题**: 回测结果图表无法正确显示或报错 "Can't get DOM width or height"
+### 📋 计划中
+- [ ] 机器学习策略模块
+- [ ] 风险管理系统
+- [ ] 策略市场平台
+- [ ] 移动端 App
 
-**解决方案**:
-- 检查浏览器控制台是否有错误信息
-- 确保回测请求参数有效（日期格式正确，MA窗口期合理）
-- 尝试调整浏览器窗口大小或刷新页面
-- 在图表容器中设置明确的宽高值
+### 🎯 长期目标
+- [ ] 量化基金管理
+- [ ] 社区策略分享
+- [ ] 实盘交易接口
+- [ ] 多语言国际化
 
-### 5. 回测请求失败
+## 🤝 贡献指南
 
-**问题**: 发送回测请求后无响应或返回错误
+1. Fork 项目仓库
+2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'Add amazing feature'`)
+4. 推送分支 (`git push origin feature/amazing-feature`) 
+5. 创建 Pull Request
 
-**解决方案**:
-- 检查后端日志是否有异常信息
-- 确认请求参数格式正确
-- 验证 API 路径是否正确 (应为 `/api/strategy/backtest`)
-- 检查网络连接和 CORS 设置
+### 代码规范
+- **前端**: ESLint + Prettier
+- **后端**: PEP 8 + Black
+- **提交**: Conventional Commits
 
-### 6. macOS 上的端口 5000 被占用
+## 📄 许可证
 
-**问题**: 在 macOS 上端口 5000 可能被 AirPlay Receiver 服务占用
+本项目基于 [MIT 许可证](LICENSE) 开源。
 
-**解决方案**:
-- 在系统设置中禁用 AirPlay Receiver 服务
-- 或者在后端配置中使用其他端口（例如 5001 或 5002）
+## 🙏 致谢
 
-### 7. 无法获取股票数据
+感谢以下开源项目的支持：
 
-**问题**: 使用 AKShare 获取数据时返回空或出错
+- [**Vue.js**](https://vuejs.org/) - 渐进式前端框架
+- [**Flask**](https://flask.palletsprojects.com/) - 轻量级 Web 框架  
+- [**Backtrader**](https://www.backtrader.com/) - Python 回测框架
+- [**AKShare**](https://github.com/akfamily/akshare) - 金融数据接口
+- [**ECharts**](https://echarts.apache.org/) - 数据可视化图表库
+- [**Element Plus**](https://element-plus.org/) - Vue 3 组件库
+- [**Tailwind CSS**](https://tailwindcss.com/) - CSS 框架
 
-**解决方案**:
-- 确认股票代码正确（例如，"000001.SZ" 而非 "000001.SS"）
-- 检查日期范围是否有效（非交易日可能没有数据）
-- 确保网络连接正常，没有被限制访问 AKShare
-- 尝试降低请求频率，避免被 API 限流
+---
 
-## 待办事项（未来开发计划）
+<div align="center">
 
-以下是计划在未来版本中添加的功能：
+**⭐ 如果这个项目对你有帮助，请给它一个星标！**
 
-1. **多策略支持**：除了移动平均线交叉策略外，增加更多的常用策略实现
-   - 布林带策略
-   - RSI 指标策略
-   - MACD 策略
-   - 趋势跟踪策略
+[📖 文档](README.md) • [🐛 问题反馈](https://github.com/yourusername/quantTrade-aiAgent/issues) • [💬 讨论](https://github.com/yourusername/quantTrade-aiAgent/discussions)
 
-2. **策略参数优化**：基于遗传算法、网格搜索等方法寻找最优参数
-
-3. **回测报告导出**：支持将回测结果导出为 PDF 或 Excel 格式
-
-4. **多周期分析**：支持不同时间周期（日、周、月）的回测比较
-
-5. **数据源扩展**：
-   - 支持更多数据源（如 Alpha Vantage、Polygon 等）
-   - 增加基本面数据分析
-
-6. **风险管理功能**：
-   - 止损/止盈设置
-   - 头寸管理
-   - 风险评估仪表板
-
-7. **用户账户系统**：
-   - 添加用户注册/登录功能
-   - 保存用户策略配置和回测历史
-
-8. **实时市场数据**：接入实时市场数据，支持模拟交易
-
-## 开发与贡献
-
-欢迎提交 issue 和 pull request 来改进项目。请确保代码遵循项目的风格指南和测试要求。
-
-### 贡献指南
-
-1. Fork 仓库
-2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m 'Add some amazing feature'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 创建一个 Pull Request
-
-## 许可证
-
-本项目采用 [MIT 许可证](LICENSE)。
-
-## 致谢
-
-- [AKShare](https://github.com/akfamily/akshare) - 提供 A 股股票历史数据访问
-- [ECharts](https://echarts.apache.org/) - 强大的交互式图表库
-- [Vue.js](https://vuejs.org/) - 响应式前端框架
-- [Flask](https://flask.palletsprojects.com/) - 轻量级 Python Web 框架
-- [Tailwind CSS](https://tailwindcss.com/) - 实用优先的 CSS 框架
+</div>
